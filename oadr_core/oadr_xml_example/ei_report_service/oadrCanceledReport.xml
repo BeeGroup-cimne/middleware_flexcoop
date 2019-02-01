@@ -1,0 +1,14 @@
+<ns:oadrCanceledReport ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads">
+  <ns1:eiResponse>
+    <ns1:responseCode>string</ns1:responseCode>
+    <!--Optional:-->
+    <ns1:responseDescription>string</ns1:responseDescription>
+    <pay:requestID>string</pay:requestID>
+  </ns1:eiResponse>
+  <ns:oadrPendingReports>
+    <!--Zero or more repetitions:-->
+    <ns1:reportRequestID>string</ns1:reportRequestID>
+  </ns:oadrPendingReports>
+  <!--Optional:-->
+  <ns1:venID>string</ns1:venID>
+</ns:oadrCanceledReport>
