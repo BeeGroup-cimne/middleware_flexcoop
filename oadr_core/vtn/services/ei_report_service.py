@@ -41,12 +41,12 @@ class OadrRegisterReport(OadrMessage):
 
     def send(self, params):
         # TODO: obtain the reports types we can crate
-        requestID = 0 # generate requests id
+        requestID = "0" # generate requests id
         reports = [{"type": "TELEMETRY_USAGE", "specifierID": "RP_222", "reportID": "ID_222", "duration":"PT1",
                     "datapoins":{"id": "m3", "data_soucrce": "", "itembase": "", "min_period": "PT01",
                     "max_period": "PT01", "market_context": "the market context"}
                     }]
-        venID = 0 #get venID to send
+        venID = "0" #get venID to send
         content = oadrRegisterReport(requestID, requestID, venID, reports)
         return oadrPayload(content)
 
@@ -77,7 +77,7 @@ class OadrCreatedReport(OadrMessage):
     def send(self, params):
         # TODO: get pending reports
         pending_reports = []
-        content = oadrCreatedReport(200, "OK", 10, pending_reports, 0)
+        content = oadrCreatedReport("200", "OK", "10", pending_reports, "0")
         return oadrPayload(content)
 
 class OadrUpdateReport(OadrMessage):

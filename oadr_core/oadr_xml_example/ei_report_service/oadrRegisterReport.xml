@@ -1,4 +1,6 @@
-<ns:oadrRegisterReport ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:urn="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:urn1="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:pow="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns2="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:ns3="http://www.opengis.net/gml/3.2">
+<ns:oadrPayload xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:urn="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:urn1="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:pow="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns2="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:ns3="http://www.opengis.net/gml/3.2">
+    <ns:oadrSignedObject>
+        <ns:oadrRegisterReport ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:urn="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:urn1="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:pow="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns2="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:ns3="http://www.opengis.net/gml/3.2">
   <pay:requestID>string</pay:requestID>
   <!--Zero or more repetitions:-->
   <ns:oadrReport>
@@ -191,3 +193,5 @@
   <!--Optional:-->
   <ns1:reportRequestID>string</ns1:reportRequestID>
 </ns:oadrRegisterReport>
+    </ns:oadrSignedObject>
+</ns:oadrPayload>

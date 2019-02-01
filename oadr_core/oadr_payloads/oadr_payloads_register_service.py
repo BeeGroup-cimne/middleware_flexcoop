@@ -121,3 +121,24 @@ def oadrRequestRegistration(venID):
         ELEMENTS['ei'].venID(venID)
     )
     return request_registration_element
+
+def oadrCreatePartyRegistration(requestID, profileName, transportName, transportAddress, reportOnly, signature,
+                                venName, pull, registrationID, venID):
+    create_registration_element = ELEMENTS['oadr'].oadrCreatePartyRegistration(
+        ELEMENTS['pyld'].requestID(requestID),
+        ELEMENTS['oadr'].oadrProfileName(profileName),
+        ELEMENTS['oadr'].oadrTransportName(transportName),
+        ELEMENTS['oadr'].oadrTransportAddress(transportAddress),
+        ELEMENTS['oadr'].oadrReportOnly(reportOnly),
+        ELEMENTS['oadr'].oadrXmlSignature(signature),
+        ELEMENTS['oadr'].oadrVenName(venName),
+        ELEMENTS['oadr'].oadrHttpPullModel(pull),
+    )
+
+    if registrationID:
+        create_registration_element.append(ELEMENTS['ei'].registrationID(registrationID))
+
+    if venID:
+        create_registration_element.append(ELEMENTS['ei'].venID(venID))
+
+    return create_registration_element

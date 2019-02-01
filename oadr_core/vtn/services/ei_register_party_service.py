@@ -45,9 +45,11 @@ class OadrCreatePartyRegistration(OadrMessage):
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ else None
         oadrTransportAddress_ = final_parameters.find(".//oadr:oadrTransportAddress", namespaces=NAMESPACES)
-        oadrTransportAddress = oadrTransportAddress_.text if oadrTransportAddress_ else None
+        oadrTransportAddress = oadrTransportAddress_.text if oadrTransportAddress_ is not None else None
         oadrVenName_ = final_parameters.find(".//oadr:oadrVenName", namespaces=NAMESPACES)
-        oadrVenName = oadrVenName_.text if oadrVenName_ else None
+        oadrVenName = oadrVenName_.text if oadrVenName_ is not None else None
+        print(oadrVenName)
+
         oadrHttpPullModel_ = final_parameters.find(".//oadr:oadrHttpPullModel", namespaces=NAMESPACES)
         oadrHttpPullModel = oadrHttpPullModel_.text if oadrHttpPullModel_ else None
         oadrHttpPullModel = True if oadrHttpPullModel == 'true' else False
