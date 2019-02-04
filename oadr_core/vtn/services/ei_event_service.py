@@ -18,9 +18,9 @@ class OadrCreatedEvent(OadrMessage):
         #respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrResponse("452", "Invalid venID", str(""))
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrResponse("452", "Invalid venID", str(""))
+                return oadrPayload(content)
         requestID = None # specifications says we should use "eventResponse:requestID" over "eiResponse:requestID"
         if eventResponses:
             responses_list = eventResponses.findall(".//ei:eventResponse")

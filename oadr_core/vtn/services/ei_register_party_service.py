@@ -43,7 +43,7 @@ class OadrCreatePartyRegistration(OadrMessage):
         registrationID_ = final_parameters.find(".//ei:registrationID", namespaces=NAMESPACES)
         registrationID = registrationID_.text if registrationID_ else None
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
         oadrTransportAddress_ = final_parameters.find(".//oadr:oadrTransportAddress", namespaces=NAMESPACES)
         oadrTransportAddress = oadrTransportAddress_.text if oadrTransportAddress_ is not None else None
         oadrVenName_ = final_parameters.find(".//oadr:oadrVenName", namespaces=NAMESPACES)
@@ -94,7 +94,7 @@ class OadrCancelPartyRegistration(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
 
         # respond
         ven = VEN.query.filter(VEN.registrationID == registrationID).first()

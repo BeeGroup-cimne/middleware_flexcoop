@@ -1,0 +1,20 @@
+{% extends 'basic.html' %}
+
+{% block content %}
+  <ul class="list-group">
+  <h1>Report capabilities of {{ ven.oadrVenName }}</h1>
+  {% for report in report_list %}
+      <li class="list-group-item">
+          <div class="row">
+              <div class="col-sm">
+                  {{ report.reportID }}: {{ report.name }}
+              </div>
+              <div class="custom-control custom-checkbox col-sm">
+                <input type="checkbox" class="custom-control-input" id="defaultUnchecked">
+                <label class="custom-control-label" for="defaultUnchecked">Subscribed</label>
+              </div>
+          </div>
+      </li>
+  {% endfor %}
+  </ul>
+{% endblock %}

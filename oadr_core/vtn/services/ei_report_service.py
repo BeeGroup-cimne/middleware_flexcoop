@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
+
+from kernel.database import db_session
 from oadr_core.oadr_base_service import OadrMessage
-from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES
+from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES, pretty_print_xml
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
     oadrUpdatedReport, oadrCanceledReport, oadrRegisterReport, oadrUpdateReport, oadrCancelReport, oadrCreateReport
-from oadr_core.vtn.models import VEN
+from oadr_core.vtn.models import VEN, MetadataReportSpec, DataPoint
 
 
 class OadrRegisterReport(OadrMessage):
@@ -15,27 +18,54 @@ class OadrRegisterReport(OadrMessage):
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
 
         # Optional parameters
+        pretty_print_xml(final_parameters)
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
         reportRequestID_ = final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES)
-        reportRequestID = reportRequestID_.text if reportRequestID_ else None
+        reportRequestID = reportRequestID_.text if reportRequestID_ is not None else None
 
         # respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, None, venID)
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, None, venID)
+                return oadrPayload(content)
+
+        for r in final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES):
+            venID = ven.venID
+            owned = False
+            reportID = r.find('.//ei:eiReportID', namespaces=NAMESPACES).text
+            specifierID = r.find('.//ei:reportSpecifierID', namespaces=NAMESPACES).text
+            duration = r.find('.//xcal:duration/xcal:duration', namespaces=NAMESPACES).text
+            name = r.find('.//ei:reportName', namespaces=NAMESPACES).text
+            created = datetime.strptime(r.find('.//ei:createdDateTime', namespaces=NAMESPACES).text[:19],
+                                               "%Y-%m-%dT%H:%M:%S")
+            report = MetadataReportSpec(venID, owned, reportID, specifierID, duration, name, created)
+            db_session.add(report)
+
+            for d in r.findall('.//oadr:oadrReportDescription', namespaces=NAMESPACES):
+                rid= d.find('.//ei:rID', namespaces=NAMESPACES).text
+                report_subject_ = d.find(".//power:mrid", namespaces=NAMESPACES)
+                report_subject = None #report_subject_.text if report_subject_ else None
+                report_source = None
+                report_type = d.find(".//ei:reportType", namespaces=NAMESPACES).text
+                #report_item = d.find(".//emix:itemBase/*", namespaces=NAMESPACES).tag
+                report_reading = d.find(".//ei:readingType", namespaces=NAMESPACES).text
+                market_context = d.find(".//emix:marketContext", namespaces=NAMESPACES).text if d.find(".//emix:marketContext", namespaces=NAMESPACES) is not None else None
+                min_sampling = d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES).text if d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
+                max_sampling = d.find(".//oadr:oadrMaxPeriod", namespaces=NAMESPACES).text if d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
+                onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES) is not None else None
+                data_point = DataPoint(rid, report, report_subject, report_source, report_type, None,
+                                       report_reading, market_context, min_sampling, max_sampling, onChange)
+                db_session.add(data_point)
+
+        db_session.flush()
+        db_session.commit()
         # TODO: check report types and prepare subscription to them
         reportRequestList = []
         reportSpecifierList = []
-        for r in final_parameters['oadr:oadrReport']:
-            report_spec = r['ei:reportSpecifierID']
-            for d in r['oadr:oadrReportDescription']:
-                print(d['ei:rID'])
-            reportRequestList.append(reportRequestID)
-            reportSpecifierList.append(report_spec)
-
+        #reportRequestList.append(reportRequestID)
+        #reportSpecifierList.append(report_spec)
         content = oadrRegisteredReport("200", "OK", str(requestID), reportRequestList, reportSpecifierList, venID)
         return oadrPayload(content)
 
@@ -62,14 +92,14 @@ class OadrCreatedReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
 
         # respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrResponse("452", "Invalid venID", str(requestID), venID)
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrResponse("452", "Invalid venID", str(requestID), venID)
+                return oadrPayload(content)
         #TODO: do watever with pending reports
         content = oadrResponse("200", "OK", str(requestID), venID)
         return oadrPayload(content)
@@ -90,29 +120,30 @@ class OadrUpdateReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
 
         #respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
+                return oadrPayload(content)
         # TODO: Process report as expected
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
         for report in reports:
-            if report['xcal:dtstart']:
-                print(report['xcal:dtstart'])
-            if report['xcal:duration']:
-                print['duration']
-            reportId = report['ei:eiReportID']
-            specifierId = report['oadr:oadrReposrtSpecifierID']
-            for interval in report['strm:intervals']['ei:interval']:
-                timestamp = interval['xcal:dtstart']
-                duration = interval['xcal:duration']
-                value = interval['reportPayload']['payloadFloat']
-                rid = interval['reportPayload']['ei:rid']
-                print("Data from {}: time: {}, duration: {}, value: {}")
+            print(report)
+            # if report['xcal:dtstart']:
+            #     print(report['xcal:dtstart'])
+            # if report['xcal:duration']:
+            #     print['duration']
+            # reportId = report['ei:eiReportID']
+            # specifierId = report['oadr:oadrReposrtSpecifierID']
+            # for interval in report['strm:intervals']['ei:interval']:
+            #     timestamp = interval['xcal:dtstart']
+            #     duration = interval['xcal:duration']
+            #     value = interval['reportPayload']['payloadFloat']
+            #     rid = interval['reportPayload']['ei:rid']
+            #     print("Data from {}: time: {}, duration: {}, value: {}")
         content = oadrUpdatedReport("200", "OK", str(requestID), None, venID)
         return oadrPayload(content)
 
@@ -132,14 +163,14 @@ class OadrCreateReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
 
         # respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
+                return oadrPayload(content)
         for request in final_parameters.findall(".//oadr:oadr_report_requests", namespaces=NAMESPACES):
             print(request)
 
@@ -164,14 +195,14 @@ class OadrCancelReport(OadrMessage):
         report_to_follow = True if report_to_follow == 'true' else False
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ else None
+        venID = venID_.text if venID_ is not None else None
 
         # respond
         if venID:
             ven = VEN.query.filter(VEN.venID == venID).first()
-        else:
-            content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
+            if ven is None:
+                content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
+                return oadrPayload(content)
 
         for report_request in final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES):
             print(report_request)

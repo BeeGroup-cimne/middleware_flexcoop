@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import settings
-from flask import Flask, request, abort, Response
+from flask import Flask, request, abort, Response, render_template
 from lxml import etree
 from lxml.builder import ElementMaker
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
-from oadr_core.vtn.models import VEN
+from oadr_core.vtn.models import VEN, MetadataReportSpec
 from oadr_core.vtn.services.ei_event_service import OadrCreatedEvent
 from oadr_core.vtn.services.ei_register_party_service import OadrQueryRegistration, OadrCreatePartyRegistration, \
     OadrCancelPartyRegistration
@@ -68,17 +68,15 @@ def openADR_VTN_service(service):
     return etree.tostring(responder.respond(payload)), 200, {'Content-Type': 'text/xml; charset=utf-8'}
 
 
-@app.route("/ven", methods=['GET'])
+@app.route("/web/ven", methods=['GET'])
 def view_ven():
-    em = ElementMaker()
-    response = em.div()
-    response.append(em.h2("List of registered ven's"))
-    list =em.ul()
-    for ven in VEN.query.all():
-        list.append(em.li(str(ven.venID) + " - " + str(ven.oadrVenName) +" - "+ str(ven.oadrTransportAddress)))
-    response.append(list)
-    return etree.tostring(response), 200
+    return render_template("web/ven_list.html", ven_list=VEN.query.all())
 
+@app.route("/web/ven_reports/<venID>", methods=['GET'])
+def view_reports(venID):
+    ven = VEN.query.filter_by(venID=venID).first()
+    reports = MetadataReportSpec.query.filter_by(ven=venID).all()
+    return render_template("web/ven_reports.html", ven=ven, report_list=reports)
 if __name__ == '__main__':
     app.run(host=settings.HOST, port=settings.PORT)
 

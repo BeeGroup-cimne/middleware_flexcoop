@@ -125,20 +125,19 @@ def oadrRequestRegistration(venID):
 def oadrCreatePartyRegistration(requestID, profileName, transportName, transportAddress, reportOnly, signature,
                                 venName, pull, registrationID, venID):
     create_registration_element = ELEMENTS['oadr'].oadrCreatePartyRegistration(
-        ELEMENTS['pyld'].requestID(requestID),
-        ELEMENTS['oadr'].oadrProfileName(profileName),
-        ELEMENTS['oadr'].oadrTransportName(transportName),
-        ELEMENTS['oadr'].oadrTransportAddress(transportAddress),
-        ELEMENTS['oadr'].oadrReportOnly(reportOnly),
-        ELEMENTS['oadr'].oadrXmlSignature(signature),
-        ELEMENTS['oadr'].oadrVenName(venName),
-        ELEMENTS['oadr'].oadrHttpPullModel(pull),
+        ELEMENTS['pyld'].requestID(requestID)
     )
-
     if registrationID:
         create_registration_element.append(ELEMENTS['ei'].registrationID(registrationID))
 
     if venID:
         create_registration_element.append(ELEMENTS['ei'].venID(venID))
+    create_registration_element.append(ELEMENTS['oadr'].oadrProfileName(profileName))
+    create_registration_element.append(ELEMENTS['oadr'].oadrTransportName(transportName))
+    create_registration_element.append(ELEMENTS['oadr'].oadrTransportAddress(transportAddress))
+    create_registration_element.append(ELEMENTS['oadr'].oadrReportOnly(reportOnly))
+    create_registration_element.append(ELEMENTS['oadr'].oadrXmlSignature(signature))
+    create_registration_element.append(ELEMENTS['oadr'].oadrVenName(venName))
+    create_registration_element.append(ELEMENTS['oadr'].oadrHttpPullModel(pull))
 
     return create_registration_element
