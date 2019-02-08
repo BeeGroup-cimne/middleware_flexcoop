@@ -9,7 +9,7 @@ MIDDLEWARE_URL = "http://127.0.0.1:8000/VTN/OpenADR2/Simple/2.0b/"
 
 
 # Generate CreatePartyRegistration xml
-content = oadrCreatePartyRegistration("1", "2.0b", "simpleHttp", "127.0.0.1:8080", "false", "false", "Test", "false", None, "VEN130615_192312_582")
+content = oadrCreatePartyRegistration("1", "2.0b", "simpleHttp", "127.0.0.1:8080", "false", "false", "Test", "false", None, None)
 # print CreatePartyRegistration xml
 pretty_print_xml(content)
 

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-
-from kernel.database import db_session
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES, pretty_print_xml
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
@@ -26,7 +24,7 @@ class OadrRegisterReport(OadrMessage):
 
         # respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.find_one({VEN.venID():venID})
             if ven is None:
                 content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, None, venID)
                 return oadrPayload(content)
@@ -41,7 +39,7 @@ class OadrRegisterReport(OadrMessage):
             created = datetime.strptime(r.find('.//ei:createdDateTime', namespaces=NAMESPACES).text[:19],
                                                "%Y-%m-%dT%H:%M:%S")
             report = MetadataReportSpec(venID, owned, reportID, specifierID, duration, name, created)
-            db_session.add(report)
+            report.save()
 
             for d in r.findall('.//oadr:oadrReportDescription', namespaces=NAMESPACES):
                 rid= d.find('.//ei:rID', namespaces=NAMESPACES).text
@@ -57,10 +55,8 @@ class OadrRegisterReport(OadrMessage):
                 onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES) is not None else None
                 data_point = DataPoint(rid, report, report_subject, report_source, report_type, None,
                                        report_reading, market_context, min_sampling, max_sampling, onChange)
-                db_session.add(data_point)
+                data_point.save()
 
-        db_session.flush()
-        db_session.commit()
         # TODO: check report types and prepare subscription to them
         reportRequestList = []
         reportSpecifierList = []
@@ -96,7 +92,7 @@ class OadrCreatedReport(OadrMessage):
 
         # respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.find_one({VEN.venID():venID})
             if ven is None:
                 content = oadrResponse("452", "Invalid venID", str(requestID), venID)
                 return oadrPayload(content)
@@ -124,7 +120,7 @@ class OadrUpdateReport(OadrMessage):
 
         #respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.find_one({VEN.venID():venID})
             if ven is None:
                 content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
                 return oadrPayload(content)
@@ -167,7 +163,7 @@ class OadrCreateReport(OadrMessage):
 
         # respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.find_one({VEN.venID(): venID})
             if ven is None:
                 content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
                 return oadrPayload(content)
@@ -199,7 +195,7 @@ class OadrCancelReport(OadrMessage):
 
         # respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.find_one({VEN.venID(): venID})
             if ven is None:
                 content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
                 return oadrPayload(content)

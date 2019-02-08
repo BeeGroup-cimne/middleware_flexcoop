@@ -1,1 +1,0 @@
-from oadr_core.vtn.models import *

@@ -5,7 +5,6 @@ from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, NAMESPACE
 from oadr_core.oadr_payloads.oadr_payloads_register_service import oadrCreatedPartyRegistration, \
     oadrCanceledPartyRegistration, oadrRequestRegistration
 from oadr_core.vtn.configuration import *
-from kernel.database import db_session
 from oadr_core.vtn.models import VEN
 
 
@@ -58,13 +57,10 @@ class OadrCreatePartyRegistration(OadrMessage):
         if not registrationID:
             ven = VEN(venID, registrationID, oadrProfileName, oadrTransportName, oadrTransportAddress,
                       oadrReportOnly, oadrXmlSignature, oadrVenName, oadrHttpPullModel)
-            db_session.add(ven)
-            db_session.flush()
             ven.registrationID = str(ven.venID)
         else:
-            ven = VEN.query.filter(VEN.registrationID == registrationID).first()
+            ven = VEN.find_one({VEN.registrationID():registrationID})
             if str(ven.venID) != venID:
-                db_session.rollback()
                 content = oadrCreatedPartyRegistration("452", "Invalid venID", str(requestID), str(registrationID), str(ven.venID),
                                                    str(VTN_ID), profiles, str(poll_freq), specific_info, extensions)
                 return oadrPayload(content)
@@ -77,7 +73,7 @@ class OadrCreatePartyRegistration(OadrMessage):
             ven.oadrVenName = oadrVenName
             ven.oadrHttpPullModel = oadrHttpPullModel
 
-        db_session.commit()
+        ven.save()
         content = oadrCreatedPartyRegistration("200", "OK", str(requestID), str(ven.registrationID), str(ven.venID), str(VTN_ID),
                                             profiles, str(poll_freq), specific_info, extensions)
         return oadrPayload(content)
@@ -97,13 +93,12 @@ class OadrCancelPartyRegistration(OadrMessage):
         venID = venID_.text if venID_ is not None else None
 
         # respond
-        ven = VEN.query.filter(VEN.registrationID == registrationID).first()
+        ven = VEN.find_one({VEN.registrationID():registrationID})
         if str(ven.venID) != venID:
             content = oadrCanceledPartyRegistration("452", "Invalid venID", str(requestID), str(registrationID), str(venID))
             return oadrPayload(content)
 
-        db_session.delete(ven)
-        db_session.commit()
+        ven.delete()
         content = oadrCanceledPartyRegistration("200", "OK", str(requestID), str(registrationID), str(venID))
         return oadrPayload(content)
 
