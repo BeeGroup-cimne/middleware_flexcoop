@@ -3,7 +3,7 @@ from flask_pymongo import PyMongo
 
 import settings
 from flask import Flask
-from oadr_core.server_blueprint import oadr
+from oadr_core.vtn.server_blueprint import oadr
 from visual_interface.visual_blueprint import web
 
 app = Flask(__name__)

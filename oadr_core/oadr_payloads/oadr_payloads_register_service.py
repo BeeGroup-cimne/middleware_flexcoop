@@ -111,13 +111,13 @@ def oadrCanceledPartyRegistration(response_code, response_description, response_
 
     return cancel_registration_element
 
-def oadrRequestRegistration(venID):
+def oadrRequestReregistration(venID):
     """
-    Generates the oadrRequestRegistration
+    Generates the oadrRequestReregistration
     :param venID:
     :return:
     """
-    request_registration_element = ELEMENTS['oadr'].oadrRequestRegistration(
+    request_registration_element = ELEMENTS['oadr'].oadrRequestReregistration(
         ELEMENTS['ei'].venID(venID)
     )
     return request_registration_element
@@ -135,9 +135,9 @@ def oadrCreatePartyRegistration(requestID, profileName, transportName, transport
     create_registration_element.append(ELEMENTS['oadr'].oadrProfileName(profileName))
     create_registration_element.append(ELEMENTS['oadr'].oadrTransportName(transportName))
     create_registration_element.append(ELEMENTS['oadr'].oadrTransportAddress(transportAddress))
-    create_registration_element.append(ELEMENTS['oadr'].oadrReportOnly(reportOnly))
-    create_registration_element.append(ELEMENTS['oadr'].oadrXmlSignature(signature))
+    create_registration_element.append(ELEMENTS['oadr'].oadrReportOnly('true' if reportOnly else 'false'))
+    create_registration_element.append(ELEMENTS['oadr'].oadrXmlSignature('true' if signature else 'false'))
     create_registration_element.append(ELEMENTS['oadr'].oadrVenName(venName))
-    create_registration_element.append(ELEMENTS['oadr'].oadrHttpPullModel(pull))
+    create_registration_element.append(ELEMENTS['oadr'].oadrHttpPullModel('true' if pull else 'false'))
 
     return create_registration_element

@@ -3,6 +3,9 @@ import uuid
 from mongo_orm import MongoDB, AnyField
 from datetime import datetime
 
+#Cache of OADR POLL messages. It is done in memory but if too many messages are in the queue it can be moved to the DB
+oadrPollQueue = {}
+
 class VEN(MongoDB):
     __collectionname__ = 'virtual_end_node'
     venID = AnyField()

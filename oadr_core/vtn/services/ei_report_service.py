@@ -58,14 +58,14 @@ class OadrRegisterReport(OadrMessage):
                 data_point.save()
 
         # TODO: check report types and prepare subscription to them
-        reportRequestList = []
-        reportSpecifierList = []
+        #report_types = [{"reportId": "reportId", "specifierId": "specifierId", "data_points":[{"rid":"a", "reading_type":"Direct Read"},{"rid":"b", "reading_type": "Direct Read"}]}]
+        report_types = []
         #reportRequestList.append(reportRequestID)
         #reportSpecifierList.append(report_spec)
-        content = oadrRegisteredReport("200", "OK", str(requestID), reportRequestList, reportSpecifierList, venID)
+        content = oadrRegisteredReport("200", "OK", str(requestID), report_types, venID)
         return oadrPayload(content)
 
-    def send(self, params):
+    def _create_message(self, params):
         # TODO: obtain the reports types we can crate
         requestID = "0" # generate requests id
         reports = [{"type": "TELEMETRY_USAGE", "specifierID": "RP_222", "reportID": "ID_222", "duration":"PT1",
@@ -100,7 +100,7 @@ class OadrCreatedReport(OadrMessage):
         content = oadrResponse("200", "OK", str(requestID), venID)
         return oadrPayload(content)
 
-    def send(self, params):
+    def _create_message(self, params):
         # TODO: get pending reports
         pending_reports = []
         content = oadrCreatedReport("200", "OK", "10", pending_reports, "0")
@@ -143,7 +143,7 @@ class OadrUpdateReport(OadrMessage):
         content = oadrUpdatedReport("200", "OK", str(requestID), None, venID)
         return oadrPayload(content)
 
-    def send(self, params):
+    def _create_message(self, params):
         # TODO Get data for report
         content = oadrUpdateReport(0, [], 0)
         return oadrPayload(content)
@@ -174,16 +174,20 @@ class OadrCreateReport(OadrMessage):
         content = oadrCreatedReport("200", "OK", str(requestID), None, venID)
         return oadrPayload(content)
 
-    def send(self, params):
+    def _create_message(self, params):
         # get pending reports
-        content = oadrCreateReport(0, [], [], 0)
+        reportRequestID = params['reportRequestID']
+        reportSpecifierID = params['reportSpecifierID']
+        requestID = params['requestID']
+        venID = params['venID']
+        content = oadrCreateReport(requestID, reportRequestID, reportSpecifierID, venID)
         return oadrPayload(content)
 
 
 class OadrCancelReport(OadrMessage):
     def _create_response(self, params):
         # get information of needed parameters
-        final_parameters = params.xpath(".//oadr:oadrCreateReport", namespaces=NAMESPACES)[0]
+        final_parameters = params.xpath(".//oadr:oadrCancelReport", namespaces=NAMESPACES)[0]
 
         # Mandatory parameters
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
@@ -204,12 +208,15 @@ class OadrCancelReport(OadrMessage):
             print(report_request)
 
         # TODO: Cancel the REPORT generation and sending, get pending reports for response
-        content = oadrCanceledReport("200", "OK", str(requestID), None, venID)
+        content = oadrCanceledReport("200", "OK", str(requestID), [], venID)
         return oadrPayload(content)
 
-    def send(self, params):
-        cancel_report = []
-        content = oadrCancelReport(cancel_report, 0)
+    def _create_message(self, params):
+        cancel_report = params['cancelReport']
+        requestID = params['requestID']
+        venID = params['venID']
+        followUp = 'true' if params['followUp'] else 'false'
+        content = oadrCancelReport(cancel_report, requestID, venID, followUp)
         return oadrPayload(content)
 
 

@@ -145,31 +145,43 @@ def telemetry_usage_report(reportRequestId, reportSpecifierID, created, reportID
     return oadr_report_element
 
 
-def oadrReportRequest(reportRequestId, reportSpecifierID):
-    report_request_element = ELEMENTS['oadr'].oadrReportRequest(
-        ELEMENTS['oadr'].reportRequestID(reportRequestId),
-        ELEMENTS['oadr'].reportSpecifier(
-            ELEMENTS['oadr'].reportSpecifierID(reportSpecifierID),
-            ELEMENTS['xcal'].granularity(
-                ELEMENTS['xcal'].duration("PT1H")
-            ),
-            ELEMENTS['ei'].reportBackDuration(
-                ELEMENTS['xcal'].duration("P1D")
-            )
+def oadrReportRequest(reportRequestId, reportSpecifierID, rid_list):
+    report_specifier = ELEMENTS['ei'].reportSpecifier(
+        ELEMENTS['ei'].reportSpecifierID(reportSpecifierID),
+        ELEMENTS['xcal'].granularity(
+            ELEMENTS['xcal'].duration("PT1H")
+        ),
+        ELEMENTS['ei'].reportBackDuration(
+            ELEMENTS['xcal'].duration("P1D")
         )
     )
+
+    for rid in rid_list:
+        report_specifier.append(
+            ELEMENTS['ei'].specifierPayload(
+                ELEMENTS['ei'].rID(rid['rid']),
+                ELEMENTS['ei'].readingType(rid['reading_type'])
+            )
+        )
+
+    report_request_element = ELEMENTS['oadr'].oadrReportRequest(
+        ELEMENTS['ei'].reportRequestID(reportRequestId),
+        report_specifier
+    )
+
     return report_request_element
 
 
-def oadrRegisteredReport(code, description, requestID, reportRequestId, reportSpecifierID, venID):
+def oadrRegisteredReport(code, description, requestID, report_types, venID):
     oadr_registered_element = ELEMENTS['oadr'].oadrRegisteredReport(
-        eiResponse(code, description, requestID),
+        eiResponse(code, description, requestID)
+    )
+    for report in report_types:
+        oadr_registered_element.append(oadrReportRequest(report['reportId'], report['specifierId'], report['data_points']))
+
+    oadr_registered_element.append(
         ELEMENTS['ei'].venID(venID)
     )
-    if reportRequestId and reportSpecifierID:
-        for req, spec in zip(reportRequestId, reportSpecifierID):
-            oadr_registered_element.append(oadrReportRequest(req, spec))
-
     return oadr_registered_element
 
 def oadrRegisterReport(requestID, reportRequestId, venID, report_dic):
@@ -190,13 +202,17 @@ def oadrRegisterReport(requestID, reportRequestId, venID, report_dic):
 
     return oadr_register_element
 
-def oadrCancelReport(cancelReport, requestID):
+def oadrCancelReport(cancelReport, requestID, venID, followUp):
     oadr_cancel = ELEMENTS['oadr'].oadrCancelReport(
         ELEMENTS['pyld'].requestID(requestID),
-        ELEMENTS['pyld'].reportToFollow("true")
     )
+    if venID:
+        oadr_cancel.append(ELEMENTS['ei'].venID(venID))
     for cancel in cancelReport:
         oadr_cancel.append(ELEMENTS['oadr'].oadrReportRequestID(cancel))
+    oadr_cancel.append(
+        ELEMENTS['pyld'].reportToFollow(followUp)
+    )
     return oadr_cancel
 
 def oadrUpdateReport(requestID, reports_dic, venID):
@@ -242,11 +258,13 @@ def oadrCreateReport(requestID, reportRequestId, reportSpecifierID, venID):
     oadr_create_element = ELEMENTS['oadr'].oadrCreateReport(
         ELEMENTS['pyld'].requestID(requestID)
     )
+    for req, spec in zip(reportRequestId, reportSpecifierID):
+        oadr_create_element.append(oadrReportRequest(req, spec))
+
     if venID:
         oadr_create_element.append(ELEMENTS['ei'].venID(venID))
 
-    for req, spec in zip(reportRequestId, reportSpecifierID):
-        oadr_create_element.append(oadrReportRequest(req, spec))
+
 
     return oadr_create_element
 
@@ -257,7 +275,7 @@ def oadrCreatedReport(code, description, requestID, pending_reports, venID):
         oadr_pending.append(
             ELEMENTS['ei'].reportRequestID(pending)
         )
-    oadr_created_element = ELEMENTS['oadr'].oadrCreateReport(
+    oadr_created_element = ELEMENTS['oadr'].oadrCreatedReport(
         eiResponse(code, description, requestID),
         oadr_pending,
         ELEMENTS['ei'].venID(venID)

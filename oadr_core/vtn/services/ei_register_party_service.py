@@ -3,7 +3,7 @@ from lxml import etree
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, NAMESPACES
 from oadr_core.oadr_payloads.oadr_payloads_register_service import oadrCreatedPartyRegistration, \
-    oadrCanceledPartyRegistration, oadrRequestRegistration
+    oadrCanceledPartyRegistration, oadrRequestReregistration
 from oadr_core.vtn.configuration import *
 from oadr_core.vtn.models import VEN
 
@@ -47,10 +47,9 @@ class OadrCreatePartyRegistration(OadrMessage):
         oadrTransportAddress = oadrTransportAddress_.text if oadrTransportAddress_ is not None else None
         oadrVenName_ = final_parameters.find(".//oadr:oadrVenName", namespaces=NAMESPACES)
         oadrVenName = oadrVenName_.text if oadrVenName_ is not None else None
-        print(oadrVenName)
 
         oadrHttpPullModel_ = final_parameters.find(".//oadr:oadrHttpPullModel", namespaces=NAMESPACES)
-        oadrHttpPullModel = oadrHttpPullModel_.text if oadrHttpPullModel_ else None
+        oadrHttpPullModel = oadrHttpPullModel_.text if oadrHttpPullModel_ is not None else None
         oadrHttpPullModel = True if oadrHttpPullModel == 'true' else False
 
         # respond
@@ -103,11 +102,11 @@ class OadrCancelPartyRegistration(OadrMessage):
         return oadrPayload(content)
 
 
-class OadrRequestRegistration(OadrMessage):
-    def send(self, params):
+class OadrRequestReregistration(OadrMessage):
+    def _create_message(self, params):
         # Mandatory parameters
         venID = params['venID']
-        content = oadrRequestRegistration(venID)
+        content = oadrRequestReregistration(venID)
         return oadrPayload(content)
 
 """

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from lxml import etree
-import xmltodict
 
 class OadrMessage():
     _schema_val = None
@@ -22,7 +21,12 @@ class OadrMessage():
     def _create_response(self, params):
         raise NotImplementedError("The response should be created at service subclass")
 
-    def send(self, params):
+    def send_oadr_message(self, VEN, params):
+        params['venID'] = VEN.venID
+        message_payload = self._create_message(params)
+        return message_payload
+
+    def _create_message(self, params):
         raise NotImplementedError("The message should be created at service subclass")
 
 
