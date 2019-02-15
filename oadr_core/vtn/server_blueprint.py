@@ -57,7 +57,6 @@ def openADR_VTN_service(service):
     except KeyError as e:
         abort(Response("The service {} can't be found".format(service), 400))
     except SyntaxError as e:
-        print("FDSAFDSAFDAFA")
         abort(Response("Invalid schema: {}".format(e), 406))
     except NotImplementedError as e:
         abort(Response("The service {} is not implemented yet".format(message), 501))

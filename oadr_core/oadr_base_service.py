@@ -16,6 +16,7 @@ class OadrMessage():
         else:
             print("schema_invalid")
             log = self._schema_val.error_log
+            print(log.last_error)
             raise SyntaxError(log.last_error)
 
     def _create_response(self, params):
