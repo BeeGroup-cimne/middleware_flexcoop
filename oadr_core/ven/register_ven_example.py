@@ -5,7 +5,7 @@ import requests
 from lxml import etree
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisterReport
 
-MIDDLEWARE_URL = "https://217.182.160.171:9022/VTN/OpenADR2/Simple/2.0b/"
+MIDDLEWARE_URL = "http://217.182.160.171:9022/VTN/OpenADR2/Simple/2.0b/"
 MIDDLEWARE_URL = "http://127.0.0.1:8000/VTN/OpenADR2/Simple/2.0b/"
 
 xmlparser = etree.XMLParser()
