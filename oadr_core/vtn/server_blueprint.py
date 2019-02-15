@@ -51,18 +51,20 @@ def openADR_VTN_service(service):
         messages = OADR_MESSAGES_ENDPOINTS[service]
         try:
             responder = messages[message]
+            return etree.tostring(responder.respond(payload)), 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))
     except KeyError as e:
         abort(Response("The service {} can't be found".format(service), 400))
     except SyntaxError as e:
+        print("FDSAFDSAFDAFA")
         abort(Response("Invalid schema: {}".format(e), 406))
     except NotImplementedError as e:
         abort(Response("The service {} is not implemented yet".format(message), 501))
     except Exception as e:
+        print("ADFAFA")
         abort(Response(e, 500))
 
-    return etree.tostring(responder.respond(payload)), 200, {'Content-Type': 'text/xml; charset=utf-8'}
 
 def send_message(oadrMessage, VEN, params):
     global oadrPollQueue

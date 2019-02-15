@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from lxml import etree
-from werkzeug.exceptions import abort
-
 
 class OadrMessage():
     _schema_val = None
@@ -18,8 +16,7 @@ class OadrMessage():
         else:
             print("schema_invalid")
             log = self._schema_val.error_log
-            print(log.last_error)
-            abort(log.last_error)
+            raise SyntaxError(log.last_error)
 
     def _create_response(self, params):
         raise NotImplementedError("The response should be created at service subclass")
