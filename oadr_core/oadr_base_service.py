@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from lxml import etree
 
+
 class OadrMessage():
     _schema_val = None
     def __init__(self):
@@ -30,6 +31,8 @@ class OadrMessage():
     def _create_message(self, params):
         raise NotImplementedError("The message should be created at service subclass")
 
+    def response_callback(self, response):
+        pass
 
 def createVENID():
     return 0

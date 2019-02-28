@@ -1,43 +1,92 @@
 from lxml.builder import ElementMaker
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, ELEMENTS, eiResponse
+from oadr_core.vtn.models import EventSignal, Event, EventInterval
 
 
-def oadrEvent(eventID, modificationNumber, modificationReason, priority, marketContext, createdDateTime, eventStatus,
-              testEvent, vtnComment, dtstart, duration, startafter, responseRequired):
+def oadrEvent(event):
     """
     Generate oadrEvent
     :return:
     """
-    root = ElementMaker(namespace=NAMESPACES['oadr'], nsmap=NAMESPACES)
-    event_element = root.oadrEvent()
-    event_element.append(
-        ELEMENTS['ei'].eiEvent(
-            ELEMENTS['ei'].eventDescriptor(
-                ELEMENTS['ei'].eventID(eventID),
-                ELEMENTS['ei'].modificationNumber(modificationNumber),
-                ELEMENTS['ei'].modificationReason(modificationReason),
-                ELEMENTS['ei'].priority(priority),
-                ELEMENTS['ei'].eiMarketContext(
-                    ELEMENTS['emix'].marketContext(marketContext)
+    event_element = ELEMENTS['oadr'].oadrEvent()
+
+    dt = ELEMENTS['xcal']("date-time")
+    dt.text = event.dtstart
+    einotification = ELEMENTS['ei']("x-eiNotification")
+    einotification.append(
+        ELEMENTS['xcal'].duration(event.eiNotification)
+    )
+    eirampUp = ELEMENTS['ei']("x-eiRampUp")
+    eirampUp.append(
+        ELEMENTS['xcal'].duration(event.eiRampUp)
+    )
+    eiRecovery = ELEMENTS['ei']("x-eiRecovery")
+    eiRecovery.append(
+        ELEMENTS['xcal'].duration(event.eiRecovery)
+    )
+    ei_event = ELEMENTS['ei'].eiEvent(
+        ELEMENTS['ei'].eventDescriptor(
+            ELEMENTS['ei'].eventID(event.eventID),
+            ELEMENTS['ei'].modificationNumber(event.modificationNumber),
+            ELEMENTS['ei'].modificationDateTime(event.modificationDateTime),
+            ELEMENTS['ei'].modificationReason(event.modificationReason),
+            ELEMENTS['ei'].priority(event.priority),
+            ELEMENTS['ei'].eiMarketContext(
+                ELEMENTS['emix'].marketContext(event.marketContext)
+            ),
+            ELEMENTS['ei'].createdDateTime(event.createdDateTime),
+            ELEMENTS['ei'].eventStatus(event.eventStatus),
+            ELEMENTS['ei'].testEvent(event.testEvent),
+            ELEMENTS['ei'].vtnComment(event.vtnComment),
+        ),
+        ELEMENTS['ei'].eiActivePeriod(
+            ELEMENTS['xcal'].properties(
+                ELEMENTS['xcal'].dtstart(event.dtstart),
+                ELEMENTS['xcal'].duration(
+                    ELEMENTS['xcal'].duration(event.duration)
                 ),
-                ELEMENTS['ei'].createdDateTime(createdDateTime),
-                ELEMENTS['ei'].eventStatus(eventStatus),
-                ELEMENTS['ei'].testEvent(testEvent),
-                ELEMENTS['ei'].vtnComment(vtnComment),
+                ELEMENTS['xcal'].torerance(
+                    ELEMENTS['xcal'].tolerate(event.tolerance)
+                ),
+                einotification,
+                eirampUp,
+                eiRecovery
             ),
-            ELEMENTS['ei'].eiActivePeriod(
-                ELEMENTS['xcal'].properties(
-                    ELEMENTS['xcal'].dtstart(dtstart),
-                    ELEMENTS['xcal'].duration(duration),
-                    ELEMENTS['xcal'].duration(startafter)
-                )
-            ),
-            ELEMENTS['ei'].eiEventSignals(),
-            ELEMENTS['ei'].eiTarget()
+            ELEMENTS['xcal'].components()
         )
     )
-    event_element.append(ELEMENTS['oadr'].oadrResponseRequired(responseRequired))
+    signals = ELEMENTS['ei'].eiEventSignals()
+    for signal in EventSignal.find({EventSignal.event(): event._id}):
+        intervals_element = ELEMENTS['strm'].intervals()
+        dt = ELEMENTS['xcal']("date-time")
+        dt.text=interval.dtstart
+        for interval in EventInterval.find({EventInterval.signal: signal._id}):
+            intervals_element.append(
+                ELEMENTS['ei'].interval(
+                    ELEMENTS['xcal'].dtstart(dt),
+                    ELEMENTS['xcal'].duration(
+                        ELEMENTS['xcal'].duration(interval.duration)
+                    ),
+                    ELEMENTS['xcal'].uid(
+                        ELEMENTS['xcal'].text(interval.uid)
+                    )
+                )
+            )
+        signals.append(
+            ELEMENTS['ei'].eiEventSignal(
+                intervals_element,
+                ELEMENTS['ei'].signalName(signal.signalName),
+                ELEMENTS['ei'].signalType(signal.signalType),
+                ELEMENTS['ei'].signalID(signal.signalID)
+            )
+        )
+    #TODO get target of event and add it.
+    # eiTarget = ELEMENTS['ei'].eiTarget()
+    ei_event.append(signals)
+
+    event_element.append(ei_event)
+    event_element.append(ELEMENTS['oadr'].oadrResponseRequired(event.responseRequired))
     return event_element
 
 

@@ -1,0 +1,70 @@
+{% extends 'web/ven_navigation.html' %}
+{% block ven %}active{% endblock %}
+
+{% block content %}
+    <h1>Info of VEN <small><a href="{{ url_for('visual.view_ven_list') }}">(back to list)</a></small></h1>
+    <table class="table">
+        <thead>
+            <tr>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                  <th scope="row">venID</th>
+                  <td>{{ ven.venID }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">registrationID</th>
+                  <td>{{ ven.registrationID }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrProfileName</th>
+                  <td>{{ ven.oadrProfileName }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrTransportName</th>
+                  <td>{{ ven.oadrTransportName }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrTransportAddress</th>
+                  <td>{{ ven.oadrTransportAddress }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrReportOnly</th>
+                  <td>{{ ven.oadrReportOnly }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrXmlSignature</th>
+                  <td>{{ ven.oadrXmlSignature }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrVenName</th>
+                  <td>{{ ven.oadrVenName }}</td>
+            </tr>
+            <tr>
+                  <th scope="row">oadrHttpPullModel</th>
+                  <td>{{ ven.oadrHttpPullModel }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% if poll_messages %}
+    <h1>Poll Pending messages</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                  <th scope="col">Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m, _ in poll_messages %}
+                <tr>
+                    <td>{{ m }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+{% endblock %}

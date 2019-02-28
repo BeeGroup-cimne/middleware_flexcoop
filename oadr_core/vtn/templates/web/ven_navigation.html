@@ -1,0 +1,12 @@
+{% extends "basic.html" %}
+
+{% block navigation %}
+    <div class="collapse navbar-collapse" id="myNavbar">
+        <ul class="nav navbar-nav">
+            <li class="{% block ven %}{% endblock %}"><a href="{{ url_for('visual.view_ven_list') }}">Registered VEN's</a></li>
+            <li class="{% block report %}{% endblock %}"><a href="{{ url_for('visual.view_vtn_reports') }}">VTN Reports</a></li>
+            <li class="{% block events %}{% endblock %}"><a href="{{ url_for('visual.view_vtn_events') }}">VTN Events</a></li>
+        </ul>
+    </div>
+{% endblock %}
+

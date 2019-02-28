@@ -1,9 +1,0 @@
-{% extends 'basic.html' %}
-
-{% block content %}
-  <ul class="list-group">
-  {% for ven in ven_list %}
-      <li class="list-group-item"><a href="/web/ven_reports/{{ ven.venID }}">{{ ven.venID }}: {{ ven.oadrVenName }}</a></li>
-  {% endfor %}
-  </ul>
-{% endblock %}

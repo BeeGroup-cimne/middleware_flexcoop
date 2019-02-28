@@ -76,7 +76,6 @@ def oadrCreatedPartyRegistration(response_code, response_description, response_r
     :param extensions:
     :return: the oadrCreatedPartyRegistration document
     """
-
     party_registration_element = ELEMENTS['oadr'].oadrCreatedPartyRegistration()
     party_registration_element.append(eiResponse(response_code, response_description, response_requestId))
     if registrationID:
@@ -90,9 +89,22 @@ def oadrCreatedPartyRegistration(response_code, response_description, response_r
         party_registration_element.append(oadrServiceSpecificInfo(specific_info))
     if extensions:
         party_registration_element.append(oadrExtensions(extensions))
-
     return party_registration_element
 
+def oadrCancelPartyRegistration(registrationID, requestID, venID):
+    """
+    Generates the oadrCancelPartyRegistration
+    :param requestID
+    :param registrationID:
+    :param venID:
+    :return:
+    """
+    cancel_registration = ELEMENTS['oadr'].oadrCancelPartyRegistration(
+        ELEMENTS['pyld'].requestID(requestID),
+        ELEMENTS['ei'].registrationID(registrationID),
+        ELEMENTS['ei'].venID(venID)
+    )
+    return cancel_registration
 
 def oadrCanceledPartyRegistration(response_code, response_description, response_requestId, registrationID, venID):
     """

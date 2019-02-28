@@ -27,8 +27,6 @@ def metadata_telemetry_usage_report(reportRequestId, reportSpecifierID, created,
         ELEMENTS['ei'].eiReportID(reportID),
     )
     for datapoint in datapoints:
-        #item_base=ELEMENTS['emix'](datapoint['itembase'])
-        #item_base.text = "Y"
         report_description = ELEMENTS['oadr'].oadrReportDescription(
             ELEMENTS['ei'].rID(datapoint['id']),
             # TODO DEFINE DATA SOURCE STRUCTURE
@@ -145,6 +143,38 @@ def telemetry_usage_report(reportRequestId, reportSpecifierID, created, reportID
     return oadr_report_element
 
 
+def metadata_report(duration, eiReportID, datapoints, reportRequestId, reportSpecifierID, reportName, createdDateTime):
+
+    oadr_report_element = ELEMENTS['oadr'].oadrReport(
+        ELEMENTS['xcal'].duration(ELEMENTS['xcal'].duration(duration)),
+        ELEMENTS['ei'].eiReportID(eiReportID),
+    )
+
+    for datapoint in datapoints:
+        report_description = ELEMENTS['oadr'].oadrReportDescription(
+            ELEMENTS['ei'].rID(datapoint['rID']),
+            ELEMENTS['ei'].reportType(datapoint['reportType']),
+            ELEMENTS['ei'].readingType(datapoint['readingType'])
+        )
+        if 'marketContext' in datapoint and datapoint['marketContext']:
+            report_description.append(ELEMENTS['emix'].marketContext(datapoint['marketContext']))
+
+        report_description.append(
+            ELEMENTS['oadr'].oadrSamplingRate(
+                ELEMENTS['oadr'].oadrMinPeriod(datapoint['oadrMinPeriod']),
+                ELEMENTS['oadr'].oadrMaxPeriod(datapoint['oadrMaxPeriod']),
+                ELEMENTS['oadr'].oadrOnChange("true" if datapoint["oadrOnChange"] else "false")
+            )
+        )
+        oadr_report_element.append(report_description)
+
+        oadr_report_element.append(ELEMENTS['ei'].reportRequestID(reportRequestId))
+        oadr_report_element.append(ELEMENTS['ei'].reportSpecifierID(reportSpecifierID))
+        oadr_report_element.append(ELEMENTS['ei'].reportName(reportName))
+        oadr_report_element.append(ELEMENTS['ei'].createdDateTime(createdDateTime))
+    return oadr_report_element
+
+
 def oadrReportRequest(reportRequestId, reportSpecifierID, rid_list):
     report_specifier = ELEMENTS['ei'].reportSpecifier(
         ELEMENTS['ei'].reportSpecifierID(reportSpecifierID),
@@ -184,21 +214,27 @@ def oadrRegisteredReport(code, description, requestID, report_types, venID):
     )
     return oadr_registered_element
 
+
 def oadrRegisterReport(requestID, reportRequestId, venID, report_dic):
     oadr_register_element = ELEMENTS['oadr'].oadrRegisterReport(
         ELEMENTS['pyld'].requestID(requestID)
     )
     for rep in report_dic:
-        if rep['type'] == "METADATA_TELEMETRY_USAGE":
-            oadr_register_element.append(
-                metadata_telemetry_usage_report(reportRequestId if reportRequestId else 0, rep['specifierID'],
-                                                datetime.now().isoformat(), rep['reportID'], rep['duration'], rep['datapoints'])
-            )
+
+        oadr_register_element.append(
+            metadata_report(rep['duration'], rep['eiReportID'], rep['data_points'], rep['reportRequestID'], rep['reportSpecifierID'], rep['reportName'], rep['createdDateTime'])
+        )
+        # if rep['reportName'] == "METADATA_TELEMETRY_USAGE":
+        #     oadr_register_element.append(
+        #         metadata_telemetry_usage_report(reportRequestId if reportRequestId else 0, rep['specifierID'],
+        #                                         datetime.now().isoformat(), rep['reportID'], rep['duration'], rep['data_points'])
+        #     )
     if venID:
         oadr_register_element.append(ELEMENTS['ei'].venID(venID))
 
     if reportRequestId:
         oadr_register_element.append(ELEMENTS['ei'].reportRequestID(reportRequestId))
+
 
     return oadr_register_element
 
@@ -223,7 +259,7 @@ def oadrUpdateReport(requestID, reports_dic, venID):
         oadr_update_element.append(ELEMENTS['ei'].venID(venID))
     for report in reports_dic:
         if report['type'] == "TELEMETRY_USAGE":
-            oadr_update_element.append(telemetry_usage_report(requestID, report['specifierID'], datetime.now().isoformat(), report['reportID'],
+            oadr_update_element.append(telemetry_usage_report(requestID, report['specifierID'], datetime.utcnow().isoformat(), report['reportID'],
                                                               report['dtstart'], report['duration'], report['intervals'] ))
     return oadr_update_element
 
@@ -254,12 +290,12 @@ def oadrCanceledReport(code, description, requestID, pending_reports, venID):
     return oadr_canceled_element
 
 
-def oadrCreateReport(requestID, reportRequestId, reportSpecifierID, venID):
+def oadrCreateReport(requestID, report_types, venID):
     oadr_create_element = ELEMENTS['oadr'].oadrCreateReport(
         ELEMENTS['pyld'].requestID(requestID)
     )
-    for req, spec in zip(reportRequestId, reportSpecifierID):
-        oadr_create_element.append(oadrReportRequest(req, spec))
+    for i, report in enumerate(report_types):
+        oadr_create_element.append(oadrReportRequest(i, report['specifierId'], report['data_points']))
 
     if venID:
         oadr_create_element.append(ELEMENTS['ei'].venID(venID))

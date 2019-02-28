@@ -9,7 +9,7 @@ class OadrPoll(OadrMessage):
         final_parameters = params.xpath(".//oadr:oadrPoll", namespaces=NAMESPACES)[0]
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
         if venID in oadrPollQueue and oadrPollQueue[venID]:
-            response = oadrPollQueue[venID].pop()
+            type, response = oadrPollQueue[venID].pop()
         else:
             response = oadrPayload(oadrResponse("200", "OK", "0", venID))
         return response

@@ -1,0 +1,26 @@
+<ns:oadrCreatedEvent ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads">
+  <pay:eiCreatedEvent>
+    <ns1:eiResponse>
+      <ns1:responseCode>string</ns1:responseCode>
+      <!--Optional:-->
+      <ns1:responseDescription>string</ns1:responseDescription>
+      <pay:requestID>string</pay:requestID>
+    </ns1:eiResponse>
+    <!--Optional:-->
+    <ns1:eventResponses>
+      <!--Zero or more repetitions:-->
+      <ns1:eventResponse>
+        <ns1:responseCode>string</ns1:responseCode>
+        <!--Optional:-->
+        <ns1:responseDescription>string</ns1:responseDescription>
+        <pay:requestID>string</pay:requestID>
+        <ns1:qualifiedEventID>
+          <ns1:eventID>string</ns1:eventID>
+          <ns1:modificationNumber>7</ns1:modificationNumber>
+        </ns1:qualifiedEventID>
+        <ns1:optType>optIn</ns1:optType>
+      </ns1:eventResponse>
+    </ns1:eventResponses>
+    <ns1:venID>string</ns1:venID>
+  </pay:eiCreatedEvent>
+</ns:oadrCreatedEvent>

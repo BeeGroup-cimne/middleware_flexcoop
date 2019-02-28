@@ -1,0 +1,30 @@
+{% extends 'web/ven_navigation.html' %}
+{% block ven %}active{% endblock %}
+
+{% block content %}
+    <h1>List of Registered VEN</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">View Reports</th>
+                <th scope="col">VEN Info</th>
+                <th scope="col">Re Register</th>
+                <th scope="col">Cancel Registration</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ven in ven_list %}
+            <tr>
+                <th scope="row">{{ ven.venID }}</th>
+                <td> {{ ven.oadrVenName }}</td>
+                <td><a href="{{ url_for('visual.view_ven_reports', venID=ven.venID) }}""/web/ven_reports/{{ ven.venID }}"><i class="fas fa-address-card"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_info', venID=ven.venID) }}"/web/ven/{{ ven.venID }}"><i class="fas fa-info"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_reregister', venID=ven.venID) }}"/web/ven/{{ ven.venID }}/reregister"><i class="fas fa-sync-alt"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_delete', venID=ven.venID) }}"/web/ven/{{ ven.venID }}/delete"><i class="fas fa-trash"></i></a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
+import time
+
 from flask_pymongo import PyMongo
 
 import settings
-from flask import Flask
+from flask import Flask, current_app
+
+from oadr_core.vtn.after_request import AfterResponse
 from oadr_core.vtn.server_blueprint import oadr
-from visual_interface.visual_blueprint import web
+from oadr_core.vtn.visual_blueprint import web
 
 app = Flask(__name__)
+AfterResponse(app)
+app.response_callback = []
 app.config.from_object('settings')
 mongo = PyMongo(app)
 
@@ -14,6 +20,14 @@ mongo = PyMongo(app)
 app.register_blueprint(oadr, url_prefix="/{prefix}/OpenADR2/Simple/2.0b".format(prefix=settings.VTN_PREFIX))
 app.register_blueprint(web, url_prefix="/web")
 
+@app.after_response
+def send_events():
+    try:
+        events, response = app.response_callback.pop()
+        for r in events:
+            r.send(AfterResponse, response=response)
+    except Exception as e:
+        pass
 
 if __name__ == '__main__':
     app.run(host=settings.HOST, port=settings.PORT)

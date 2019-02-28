@@ -1,0 +1,266 @@
+<ns:oadrDistributeEvent ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:ns2="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:urn="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:urn1="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:pow="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns3="http://www.opengis.net/gml/3.2">
+  <!--Optional:-->
+  <ns1:eiResponse>
+    <ns1:responseCode>string</ns1:responseCode>
+    <!--Optional:-->
+    <ns1:responseDescription>string</ns1:responseDescription>
+    <pay:requestID>string</pay:requestID>
+  </ns1:eiResponse>
+  <pay:requestID>string</pay:requestID>
+  <ns1:vtnID>string</ns1:vtnID>
+  <!--Zero or more repetitions:-->
+  <ns:oadrEvent>
+    <ns1:eiEvent>
+      <ns1:eventDescriptor>
+        <ns1:eventID>string</ns1:eventID>
+        <ns1:modificationNumber>7</ns1:modificationNumber>
+        <!--Optional:-->
+        <ns1:modificationDateTime>2007-10-26T08:36:28</ns1:modificationDateTime>
+        <!--Optional:-->
+        <ns1:modificationReason>string</ns1:modificationReason>
+        <!--Optional:-->
+        <ns1:priority>7</ns1:priority>
+        <ns1:eiMarketContext>
+          <ns2:marketContext>http://www.any.org/ventos/verrantque</ns2:marketContext>
+        </ns1:eiMarketContext>
+        <ns1:createdDateTime>2008-11-15T17:52:58</ns1:createdDateTime>
+        <ns1:eventStatus>far</ns1:eventStatus>
+        <!--Optional:-->
+        <ns1:testEvent>string</ns1:testEvent>
+        <!--Optional:-->
+        <ns1:vtnComment>string</ns1:vtnComment>
+      </ns1:eventDescriptor>
+      <ns1:eiActivePeriod>
+        <urn:properties>
+          <urn:dtstart>
+            <urn:date-time>2003-08-09T02:18:37+02:00</urn:date-time>
+          </urn:dtstart>
+          <urn:duration>
+            <urn:duration>string</urn:duration>
+          </urn:duration>
+          <!--Optional:-->
+          <urn:tolerance>
+            <urn:tolerate>
+              <!--Optional:-->
+              <urn:startafter>string</urn:startafter>
+            </urn:tolerate>
+          </urn:tolerance>
+          <!--Optional:-->
+          <ns1:x-eiNotification>
+            <urn:duration>string</urn:duration>
+          </ns1:x-eiNotification>
+          <!--Optional:-->
+          <ns1:x-eiRampUp>
+            <urn:duration>string</urn:duration>
+          </ns1:x-eiRampUp>
+          <!--Optional:-->
+          <ns1:x-eiRecovery>
+            <urn:duration>string</urn:duration>
+          </ns1:x-eiRecovery>
+        </urn:properties>
+        <urn:components>anyType</urn:components>
+      </ns1:eiActivePeriod>
+      <ns1:eiEventSignals>
+        <!--1 or more repetitions:-->
+        <ns1:eiEventSignal>
+          <urn1:intervals>
+            <!--1 or more repetitions:-->
+            <ns1:interval>
+              <!--Optional:-->
+              <urn:dtstart>
+                <urn:date-time>2012-09-13T15:00:34+02:00</urn:date-time>
+              </urn:dtstart>
+              <!--Optional:-->
+              <urn:duration>
+                <urn:duration>string</urn:duration>
+              </urn:duration>
+              <!--Optional:-->
+              <urn:uid>
+                <urn:text>string</urn:text>
+              </urn:uid>
+              <!--1 or more repetitions:-->
+              <urn1:streamPayloadBase/>
+            </ns1:interval>
+          </urn1:intervals>
+          <!--Optional:-->
+          <ns1:eiTarget>
+            <!--Zero or more repetitions:-->
+            <pow:aggregatedPnode>
+              <pow:node>string</pow:node>
+            </pow:aggregatedPnode>
+            <!--Zero or more repetitions:-->
+            <pow:endDeviceAsset>
+              <pow:mrid>string</pow:mrid>
+            </pow:endDeviceAsset>
+            <!--Zero or more repetitions:-->
+            <pow:meterAsset>
+              <pow:mrid>string</pow:mrid>
+            </pow:meterAsset>
+            <!--Zero or more repetitions:-->
+            <pow:pnode>
+              <pow:node>string</pow:node>
+            </pow:pnode>
+            <!--Zero or more repetitions:-->
+            <ns2:serviceArea>
+              <ns3:FeatureCollection ns3:id="string">
+                <ns3:location>
+                  <ns3:Polygon ns3:id="string">
+                    <ns3:exterior>
+                      <ns3:LinearRing>
+                        <ns3:posList>1.051732E7 1.051732E7</ns3:posList>
+                      </ns3:LinearRing>
+                    </ns3:exterior>
+                  </ns3:Polygon>
+                </ns3:location>
+              </ns3:FeatureCollection>
+            </ns2:serviceArea>
+            <!--Zero or more repetitions:-->
+            <pow:serviceDeliveryPoint>
+              <pow:node>string</pow:node>
+            </pow:serviceDeliveryPoint>
+            <!--Zero or more repetitions:-->
+            <pow:serviceLocation>
+              <ns3:FeatureCollection ns3:id="string">
+                <ns3:location>
+                  <ns3:Polygon ns3:id="string">
+                    <ns3:exterior>
+                      <ns3:LinearRing>
+                        <ns3:posList>1.051732E7</ns3:posList>
+                      </ns3:LinearRing>
+                    </ns3:exterior>
+                  </ns3:Polygon>
+                </ns3:location>
+              </ns3:FeatureCollection>
+            </pow:serviceLocation>
+            <!--Zero or more repetitions:-->
+            <pow:transportInterface>
+              <pow:pointOfReceipt>string</pow:pointOfReceipt>
+              <pow:pointOfDelivery>string</pow:pointOfDelivery>
+            </pow:transportInterface>
+            <!--Zero or more repetitions:-->
+            <ns1:groupID>string</ns1:groupID>
+            <!--Zero or more repetitions:-->
+            <ns1:groupName>string</ns1:groupName>
+            <!--Zero or more repetitions:-->
+            <ns1:resourceID>string</ns1:resourceID>
+            <!--Zero or more repetitions:-->
+            <ns1:venID>string</ns1:venID>
+            <!--Zero or more repetitions:-->
+            <ns1:partyID>string</ns1:partyID>
+          </ns1:eiTarget>
+          <ns1:signalName>simple</ns1:signalName>
+          <ns1:signalType>x-loadControlLevelOffset</ns1:signalType>
+          <ns1:signalID>string</ns1:signalID>
+          <!--Optional:-->
+          <ns2:itemBase/>
+          <!--Optional:-->
+          <ns1:currentValue>
+            <ns1:payloadFloat>
+              <ns1:value>1.5E2</ns1:value>
+            </ns1:payloadFloat>
+          </ns1:currentValue>
+        </ns1:eiEventSignal>
+        <!--Optional:-->
+        <ns1:eiEventBaseline>
+          <urn:dtstart>
+            <urn:date-time>2014-10-27T10:44:59</urn:date-time>
+          </urn:dtstart>
+          <urn:duration>
+            <urn:duration>string</urn:duration>
+          </urn:duration>
+          <urn1:intervals>
+            <!--1 or more repetitions:-->
+            <ns1:interval>
+              <!--Optional:-->
+              <urn:dtstart>
+                <urn:date-time>2013-06-17T19:14:58</urn:date-time>
+              </urn:dtstart>
+              <!--Optional:-->
+              <urn:duration>
+                <urn:duration>string</urn:duration>
+              </urn:duration>
+              <!--Optional:-->
+              <urn:uid>
+                <urn:text>string</urn:text>
+              </urn:uid>
+              <!--1 or more repetitions:-->
+              <urn1:streamPayloadBase/>
+            </ns1:interval>
+          </urn1:intervals>
+          <ns1:baselineID>string</ns1:baselineID>
+          <!--Zero or more repetitions:-->
+          <ns1:resourceID>string</ns1:resourceID>
+          <ns1:baselineName>string</ns1:baselineName>
+          <!--Optional:-->
+          <ns2:itemBase/>
+        </ns1:eiEventBaseline>
+      </ns1:eiEventSignals>
+      <ns1:eiTarget>
+        <!--Zero or more repetitions:-->
+        <pow:aggregatedPnode>
+          <pow:node>string</pow:node>
+        </pow:aggregatedPnode>
+        <!--Zero or more repetitions:-->
+        <pow:endDeviceAsset>
+          <pow:mrid>string</pow:mrid>
+        </pow:endDeviceAsset>
+        <!--Zero or more repetitions:-->
+        <pow:meterAsset>
+          <pow:mrid>string</pow:mrid>
+        </pow:meterAsset>
+        <!--Zero or more repetitions:-->
+        <pow:pnode>
+          <pow:node>string</pow:node>
+        </pow:pnode>
+        <!--Zero or more repetitions:-->
+        <ns2:serviceArea>
+          <ns3:FeatureCollection ns3:id="string">
+            <ns3:location>
+              <ns3:Polygon ns3:id="string">
+                <ns3:exterior>
+                  <ns3:LinearRing>
+                    <ns3:posList>1.051732E7 1.051732E7</ns3:posList>
+                  </ns3:LinearRing>
+                </ns3:exterior>
+              </ns3:Polygon>
+            </ns3:location>
+          </ns3:FeatureCollection>
+        </ns2:serviceArea>
+        <!--Zero or more repetitions:-->
+        <pow:serviceDeliveryPoint>
+          <pow:node>string</pow:node>
+        </pow:serviceDeliveryPoint>
+        <!--Zero or more repetitions:-->
+        <pow:serviceLocation>
+          <ns3:FeatureCollection ns3:id="string">
+            <ns3:location>
+              <ns3:Polygon ns3:id="string">
+                <ns3:exterior>
+                  <ns3:LinearRing>
+                    <ns3:posList>1.051732E7 1.051732E7</ns3:posList>
+                  </ns3:LinearRing>
+                </ns3:exterior>
+              </ns3:Polygon>
+            </ns3:location>
+          </ns3:FeatureCollection>
+        </pow:serviceLocation>
+        <!--Zero or more repetitions:-->
+        <pow:transportInterface>
+          <pow:pointOfReceipt>string</pow:pointOfReceipt>
+          <pow:pointOfDelivery>string</pow:pointOfDelivery>
+        </pow:transportInterface>
+        <!--Zero or more repetitions:-->
+        <ns1:groupID>string</ns1:groupID>
+        <!--Zero or more repetitions:-->
+        <ns1:groupName>string</ns1:groupName>
+        <!--Zero or more repetitions:-->
+        <ns1:resourceID>string</ns1:resourceID>
+        <!--Zero or more repetitions:-->
+        <ns1:venID>string</ns1:venID>
+        <!--Zero or more repetitions:-->
+        <ns1:partyID>string</ns1:partyID>
+      </ns1:eiTarget>
+    </ns1:eiEvent>
+    <ns:oadrResponseRequired>never</ns:oadrResponseRequired>
+  </ns:oadrEvent>
+</ns:oadrDistributeEvent>

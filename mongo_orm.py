@@ -21,7 +21,7 @@ class MongoMeta(type):
         dummy_p = {p:v.default for p,v in parameters.items() if p != 'self'}
         obj = cls(**dummy_p)
         for attr in cls.__mongo_fields__:
-            obj.__setattr__(attr, remote[attr])
+            obj.__setattr__(attr, remote[attr] if attr in remote else None)
         obj._id = remote['_id']
         return obj
 

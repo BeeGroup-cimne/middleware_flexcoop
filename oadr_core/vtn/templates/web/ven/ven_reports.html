@@ -1,0 +1,42 @@
+{% extends 'web/ven_navigation.html' %}
+{% block ven %}active{% endblock %}
+
+{% block content %}
+  <ul class="list-group">
+  <h1>Report capabilities of {{ ven.oadrVenName }} <small><a href="{{ url_for('visual.view_ven_list') }}">(back to list)</a></small></h1>
+  <form method="post">
+      <table class="table">
+          <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Subscription</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report, data_points in report_data_points.items() %}
+            <tr>
+                <th scope="row">{{ report.eiReportID }}</th>
+                <td>{{ report.reportName }}</td>
+                <td></td>
+                </td>
+            </tr>
+
+            {% for data in data_points %}
+                <tr>
+                    <td></td>
+                    <td>{{ data.rID }}</td>
+                    <td>
+                        <div class="custom-control custom-checkbox col-sm">
+                            <input type="checkbox" class="custom-control-input" name="r{{ report.eiReportID }}-{{ data.rID }}" {% if data.subscribed == True %} checked="checked" {% endif %}>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+      </table>
+      <button type="submit">subscribe to selected reports</button>
+  </form>
+  </ul>
+{% endblock %}
