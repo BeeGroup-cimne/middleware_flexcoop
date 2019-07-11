@@ -295,7 +295,7 @@ def oadrCreateReport(requestID, report_types, venID):
         ELEMENTS['pyld'].requestID(requestID)
     )
     for i, report in enumerate(report_types):
-        oadr_create_element.append(oadrReportRequest(i, report['specifierId'], report['data_points']))
+        oadr_create_element.append(oadrReportRequest(str(i), report['specifierId'], report['data_points']))
 
     if venID:
         oadr_create_element.append(ELEMENTS['ei'].venID(venID))

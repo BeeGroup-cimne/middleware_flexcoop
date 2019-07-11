@@ -54,6 +54,8 @@ def openADR_VTN_service(service):
     payload = etree.fromstring(request.get_data())
     # identify which is the message recieved:
     # TODO: Validate signed object
+    print(request.headers)
+
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
     responder = None
@@ -62,7 +64,9 @@ def openADR_VTN_service(service):
         try:
             responder, events = messages[message]
             response = etree.tostring(responder.respond(payload))
-            app.response_callback.append((events['recieve'], response))
+            if 'recieve' in events:
+                app.response_callback.append((events['recieve'], response))
+
             return response, 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))
