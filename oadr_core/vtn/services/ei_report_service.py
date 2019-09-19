@@ -28,20 +28,16 @@ class OadrRegisterReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
+        venID = venID_.text if venID_ is not None else ""
         reportRequestID_ = final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES)
         reportRequestID = reportRequestID_.text if reportRequestID_ is not None else None
 
         # respond
-        if venID:
-            ven = VEN.find_one({VEN.venID():venID})
-            if ven is None:
-
-                content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, venID)
-                return oadrPayload(content)
-        else:
-            content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, None)
+        ven = VEN.find_one({VEN.venID():venID})
+        if ven is None:
+            content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, venID)
             return oadrPayload(content)
+
         ven.remove_reports()
         for r in final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES):
             owned = False
@@ -143,14 +139,14 @@ class OadrCreatedReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
+        venID = venID_.text if venID_ is not None else ""
 
         # respond
-        if venID:
-            ven = VEN.find_one({VEN.venID():venID})
-            if ven is None:
-                content = oadrResponse("452", "Invalid venID", str(requestID), venID)
-                return oadrPayload(content)
+
+        ven = VEN.find_one({VEN.venID():venID})
+        if ven is None:
+            content = oadrResponse("452", "Invalid venID", str(requestID), venID)
+            return oadrPayload(content)
         #TODO: do watever with pending reports
         content = oadrResponse("200", "OK", str(requestID), venID)
         return content
@@ -178,14 +174,11 @@ class OadrUpdateReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
-
-        #respond
-        if venID:
-            ven = VEN.find_one({VEN.venID():venID})
-            if ven is None:
-                content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
-                return oadrPayload(content)
+        venID = venID_.text if venID_ is not None else ""
+        ven = VEN.find_one({VEN.venID(): venID})
+        if ven is None:
+            content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
+            return oadrPayload(content)
         # TODO: Process report as expected
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
         for report in reports:
@@ -203,6 +196,7 @@ class OadrUpdateReport(OadrMessage):
             #     rid = interval['reportPayload']['ei:rid']
             #     print("Data from {}: time: {}, duration: {}, value: {}")
         content = oadrUpdatedReport("200", "OK", str(requestID), None, venID)
+
         return oadrPayload(content)
 
     def _create_message(self, params):
@@ -227,14 +221,13 @@ class OadrCreateReport(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
-
+        venID = venID_.text if venID_ is not None else ""
+        ven = VEN.find_one({VEN.venID(): venID})
         # respond
-        if venID:
-            ven = VEN.find_one({VEN.venID(): venID})
-            if ven is None:
-                content = oadrCreatedReport("452", "Invalid venID", str(requestID), None, venID)
-                return oadrPayload(content)
+        if ven is None:
+            content = oadrCreatedReport("452", "Invalid venID", str(requestID), None, venID)
+            return oadrPayload(content)
+
         for r_request in final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES):
             register_report(r_request)
 
@@ -263,16 +256,12 @@ class OadrCancelReport(OadrMessage):
         report_to_follow = True if report_to_follow == 'true' else False
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
+        venID = venID_.text if venID_ is not None else ""
 
         # respond
-        if venID:
-            ven = VEN.find_one({VEN.venID(): venID})
-            if ven is None:
-                content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
-                return oadrPayload(content)
-        else:
-            content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, None)
+        ven = VEN.find_one({VEN.venID(): venID})
+        if ven is None:
+            content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
             return oadrPayload(content)
 
         for report_request in final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES):

@@ -268,6 +268,7 @@ def oadrUpdatedReport(code, description, requestID, cancelReport, venID):
         eiResponse(code, description, requestID),
         ELEMENTS['ei'].venID(venID)
     )
+
     if cancelReport:
         oadr_updated_element.append(
             oadrCancelReport(cancelReport, requestID)
