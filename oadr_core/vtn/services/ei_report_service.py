@@ -6,6 +6,7 @@ from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES, pretty_print_xml
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
     oadrUpdatedReport, oadrCanceledReport, oadrRegisterReport, oadrUpdateReport, oadrCancelReport, oadrCreateReport
+from oadr_core.oadr_payloads.reports.reports_installed import available_reports
 from oadr_core.vtn.models import VEN, MetadataReportSpec, DataPoint, ReportsToSend
 
 
@@ -179,24 +180,17 @@ class OadrUpdateReport(OadrMessage):
         if ven is None:
             content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
             return oadrPayload(content)
-        # TODO: Process report as expected
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
         for report in reports:
-            print(report)
-            # if report['xcal:dtstart']:
-            #     print(report['xcal:dtstart'])
-            # if report['xcal:duration']:
-            #     print['duration']
-            # reportId = report['ei:eiReportID']
-            # specifierId = report['oadr:oadrReposrtSpecifierID']
-            # for interval in report['strm:intervals']['ei:interval']:
-            #     timestamp = interval['xcal:dtstart']
-            #     duration = interval['xcal:duration']
-            #     value = interval['reportPayload']['payloadFloat']
-            #     rid = interval['reportPayload']['ei:rid']
-            #     print("Data from {}: time: {}, duration: {}, value: {}")
+            try:
+                type_r = report.find(".//ei:reportName").text
+                report_type = available_reports[type_r]
+                report_type.parse(report)
+            except Exception as e:
+                print("Recieved unsuported report {}".format(type_r))
+                content = oadrUpdatedReport("452", "unsuported report {}".format(type_r), str(requestID), None, venID)
+                return oadrPayload(content)
         content = oadrUpdatedReport("200", "OK", str(requestID), None, venID)
-
         return oadrPayload(content)
 
     def _create_message(self, params):

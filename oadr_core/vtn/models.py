@@ -8,7 +8,7 @@ oadrPollQueue = {}
 
 class VEN(MongoDB):
     """
-    class that defines an openadr VEN
+    An openadr VEN
     """
     __collectionname__ = 'virtual_end_node'
     venID = AnyField()
@@ -54,7 +54,7 @@ class VEN(MongoDB):
 
 class MetadataReportSpec(MongoDB):
     """
-       class that defines an openadr Metadata_report.
+       An openadr Metadata_report.
     """
     __collectionname__ = 'metadata_reports'
     ven = AnyField()
@@ -78,7 +78,7 @@ class MetadataReportSpec(MongoDB):
 
 class DataPoint(MongoDB):
     """
-       class that defines an openadr Metadata_report data_point
+       An openadr Metadata_report data_point
     """
     __collectionname__ = 'datapoints'
     report = AnyField()
@@ -107,7 +107,7 @@ class DataPoint(MongoDB):
 
 class ReportsToSend(MongoDB):
     """
-    Class that defines the reports that this VTN has to send to other VEN (pending_reports)
+    The reports that this VTN has to send to other VEN (pending_reports)
     """
     report = AnyField()
     reportRequestID = AnyField()
@@ -274,3 +274,5 @@ class EventInterval(MongoDB):
                     inc = True
             self.__dict__.__delitem__(_key)
         super(EventInterval, self).save()
+
+

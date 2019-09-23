@@ -4,6 +4,10 @@ from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, eiResponse, 
 
 
 # define custom and standard reports
+#from oadr_core.oadr_payloads.reports.telemetry_usage import telemetry_usage_report
+from oadr_core.oadr_payloads.reports.reports_installed import available_reports
+
+
 def metadata_telemetry_usage_report(reportRequestId, reportSpecifierID, created, reportID, duration, datapoints):
     """
     Generates a metadata report for telemetry usage
@@ -54,93 +58,7 @@ def metadata_telemetry_usage_report(reportRequestId, reportSpecifierID, created,
     return oadr_report_element
 
 
-def telemetry_usage_report(reportRequestId, reportSpecifierID, created, reportID, dt_start, duration, intervals):
-    """
-    Generates a real telemetry usage report
-    :param reportRequestId:  the request id
-    :param reportSpecifierID: the report specifier id
-    :param created: the datetime of created in iso format
-    :param reportID: the id of the report
-    :param dt_start: the start of the report
-    :param duration: the duration of the report
-    :param intervals: a list of dictionaries indicating each interval of time:
-            {dtstart: the start of the interval,
-            duration: the duration of the interval,
-            uid: an id of this interval starting at 0,
-            datapooints: a list of dictionaris of the datapoints for this report:
-                {rid: the identifier of the datapoint,
-                payload: the actual data of this datapoint,
-                confidence: the confidence value,
-                accuracy: the accuracy of the measure,
-                dataQuality: description on the quality of this data,
-                }
-    :return:
-    """
-    oadr_report_element = ELEMENTS['oadr'].oadrReport(
-        ELEMENTS['ei'].eiReportID(reportID),
-        ELEMENTS['ei'].reportRequestID(reportRequestId),
-        ELEMENTS['ei'].reportSpecifierID(reportSpecifierID),
-        ELEMENTS['ei'].createdDateTime(created),
-        ELEMENTS['ei'].reportName("TELEMETRY_USAGE"),
-    )
-    if dt_start:
-        dt = ELEMENTS['xcal']("date-time")
-        dt.text = dt_start
-        oadr_report_element.append(
-            ELEMENTS['xcal'].dtstart(
-                dt
-            )
-        )
-    if duration:
-        dt = ELEMENTS['xcal']("date-time")
-        dt.text = dt_start
-        oadr_report_element.append(
-            ELEMENTS['xcal'].duration(
-                ELEMENTS['xcal'].duration(
-                    duration
-                )
-            )
-        )
-    if intervals:
-        intervals_element = ELEMENTS['strm'].intervals()
-        for interval in intervals:
-            dt = ELEMENTS['xcal']("date-time")
-            dt.text = interval['dtstart']
-            interval_element = ELEMENTS['ei'].interval(
-                ELEMENTS['xcal'].dtstart(dt),
-                ELEMENTS['xcal'].duration(
-                    ELEMENTS['xcal'].duration(
-                        interval['duration']
-                    )
-                ),
-                ELEMENTS['xcal'].uid(
-                    ELEMENTS['xcal'].text(interval['uid'])
-                ),
-            )
-            if 'datapoints' in interval:
-                for datapoint in interval['datapoints']:
-                    report_payload = ELEMENTS['oadr'].oadrReportPayload(
-                        ELEMENTS['ei'].rid(datapoint['rid']),
-                        ELEMENTS['ei'].payloadFloat(
-                            ELEMENTS['ei'].value(datapoint['payload'])
-                        )
-                    )
-                    if 'confidence' in datapoint:
-                        report_payload.append(
-                            ELEMENTS['ei'].confidence(datapoint['confidence'])
-                        )
-                    if 'accuracy' in datapoint:
-                        report_payload.append(
-                            ELEMENTS['ei'].accuracy(datapoint['accuracy'])
-                        )
-                    if 'dataQuality' in datapoint:
-                        report_payload.append(
-                            ELEMENTS['oadr'].oadrDataQuality(datapoint['dataQuality'])
-                        )
-                    interval_element.append(report_payload)
-            intervals_element.append(interval_element)
-        oadr_report_element.append(intervals_element)
-    return oadr_report_element
+
 
 
 def metadata_report(duration, eiReportID, datapoints, reportRequestId, reportSpecifierID, reportName, createdDateTime):
@@ -258,9 +176,12 @@ def oadrUpdateReport(requestID, reports_dic, venID):
     if venID:
         oadr_update_element.append(ELEMENTS['ei'].venID(venID))
     for report in reports_dic:
-        if report['type'] == "TELEMETRY_USAGE":
-            oadr_update_element.append(telemetry_usage_report(requestID, report['specifierID'], datetime.utcnow().isoformat(), report['reportID'],
-                                                              report['dtstart'], report['duration'], report['intervals'] ))
+        try:
+            report = available_reports[report['type']]
+            oadr_update_element.append(report.create(requestID, report['specifierID'], datetime.utcnow().isoformat(), report['reportID'],
+                                                                  report['dtstart'], report['duration'], report['intervals']))
+        except Exception as e:
+            print("The report {} is not supported and is being ignored".format(report['type']))
     return oadr_update_element
 
 def oadrUpdatedReport(code, description, requestID, cancelReport, venID):
