@@ -27,13 +27,13 @@ class TelemetryUsageReport(OadrReport):
                 self.specifierID = specifierID
                 self.reportName = TelemetryUsageReport.report_name
                 self.createdDateTime = createdDateTime
-                self.dataType = set()
+                self.dataTypes = set()
 
             def add_dataType(self, datatype):
-                self.dataType.add(datatype)
+                self.dataTypes.add(datatype)
                 self.save()
             def remove_dataType(self, datatype):
-                self.dataType.remove(datatype)
+                self.dataTypes.remove(datatype)
                 self.save()
         return TelemetryReportModel
 
@@ -192,4 +192,3 @@ class TelemetryUsageReport(OadrReport):
             data = TMP(report_id, dt_start_i, duration_i, uid_i, rid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
             data.save()
             r.add_dataType(rid_i)
-            r.save()

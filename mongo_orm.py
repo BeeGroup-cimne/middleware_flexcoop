@@ -1,8 +1,17 @@
+from bson import InvalidDocument
+
 from settings import MONGO_URI
 from inspect import signature
 from datetime import datetime
 from pymongo import MongoClient
 from types import MethodType
+
+class Encoder():
+    def encode(self,x):
+        if type(x) == set:
+            return list(x)
+        else:
+            return x
 
 class AnyField():
     def __call__(self, *args, **kwargs):
@@ -56,13 +65,18 @@ class MongoDB(object, metaclass=MongoMeta):
     __collectionname__="dummy"
 
     def save(self):
-        obj_dict = {k: v for k,v in self.__dict__.items() if k in self.__mongo_fields__}
+        encoder = Encoder()
+        obj_dict = {k: encoder.encode(v) for k,v in self.__dict__.items() if k in self.__mongo_fields__}
         try:
-            obj_dict.update({"_updated_at": datetime.utcnow()})
-            self.__mongo__.update_one({"_id":self._id}, {"$set": obj_dict})
+            try:
+                obj_dict.update({"_updated_at": datetime.utcnow()})
+                self.__mongo__.update_one({"_id":self._id}, {"$set": obj_dict})
+            except AttributeError as e:
+                obj_dict.update({"_created_at": datetime.utcnow(), "_updated_at": datetime.utcnow()})
+                self._id = self.__mongo__.insert_one(obj_dict).inserted_id
         except Exception as e:
-            obj_dict.update({"_created_at": datetime.utcnow(), "_updated_at": datetime.utcnow()})
-            self._id = self.__mongo__.insert_one(obj_dict).inserted_id
+            print(type(e))
+            print(e)
 
     def delete(self):
         self.__mongo__.delete_one({"_id":self._id})

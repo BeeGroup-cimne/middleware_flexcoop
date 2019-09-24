@@ -169,7 +169,6 @@ class OadrUpdateReport(OadrMessage):
     def _create_response(self, params):
         # get information of needed parameters
         final_parameters = params.xpath(".//oadr:oadrUpdateReport", namespaces=NAMESPACES)[0]
-
         # Mandatory parameters
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
 
@@ -177,16 +176,23 @@ class OadrUpdateReport(OadrMessage):
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
         ven = VEN.find_one({VEN.venID(): venID})
+
         if ven is None:
             content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
             return oadrPayload(content)
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
+
         for report in reports:
             try:
-                type_r = report.find(".//ei:reportName").text
+                type_r = report.find(".//ei:reportName", namespaces=NAMESPACES).text
+            except AttributeError as e:
+                type_r = "Undefinded reportName"
+                print(e)
+            try:
                 report_type = available_reports[type_r]
                 report_type.parse(report)
             except Exception as e:
+                print(e)
                 print("Recieved unsuported report {}".format(type_r))
                 content = oadrUpdatedReport("452", "unsuported report {}".format(type_r), str(requestID), None, venID)
                 return oadrPayload(content)
