@@ -191,6 +191,7 @@ class OadrUpdateReport(OadrMessage):
             try:
                 report_type = available_reports[type_r]
                 report_type.parse(report)
+                #TODO Report Send to Hypertech
             except Exception as e:
                 print(e)
                 print("Recieved unsuported report {}".format(type_r))

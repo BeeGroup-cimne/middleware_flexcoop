@@ -1,8 +1,14 @@
+import re
+
 from mongo_orm import MongoDB, AnyField
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 
 
+def parse_rid(rid):
+    phisical_device, pdn, prosumer, spaces, load, ln, metric = re.split("(?<!_)_(?!_)", rid)
+    spaces = spaces.split("__")
+    return "{}_{}".format(phisical_device, pdn), prosumer, spaces, "{}_{}".format(load, ln), metric
 
 class TelemetryUsageReport(OadrReport):
     report_name = "TELEMETRY_USAGE"
@@ -45,22 +51,36 @@ class TelemetryUsageReport(OadrReport):
             dtstart = AnyField()
             duration = AnyField()
             uid = AnyField()
-            rid = AnyField()
             confidence = AnyField()
             accuracy = AnyField()
             dataQuality = AnyField()
             value = AnyField()
+            physical_device = AnyField()
+            prosumer = AnyField()
+            spaces = AnyField()
+            load = AnyField()
+            metric = AnyField()
+
+
+
 
             def __init__(self, report_id, dt_start, duration, uid, rid, confidence, accuracy, dataQuality, value):
                 self.report_id = report_id
                 self.dtstart = dt_start
                 self.duration = duration
                 self.uid = uid
-                self.rid = rid
                 self.confidence = confidence
                 self.accuracy = accuracy
                 self.dataQuality = dataQuality
                 self.value = value
+                physical_device, prosumer, spaces, load, metric = parse_rid(rid)
+                self.physical_device = physical_device
+                self.prosumer = prosumer
+                self.spaces = spaces
+                self.load = load
+                self.metric = metric
+
+
 
         return ReportDataModel
 
@@ -172,6 +192,7 @@ class TelemetryUsageReport(OadrReport):
             duration = interval.find(".//xcal:duration", namespaces=NAMESPACES)
             uid = interval.find(".//xcal:uid", namespaces=NAMESPACES)
             rid_i = interval.find(".//ei:rID", namespaces=NAMESPACES).text
+
             confidence = interval.find(".//ei:confidence", namespaces=NAMESPACES)
             accuracy = interval.find(".//ei:accuracy", namespaces=NAMESPACES)
             dataQuality = interval.find(".//ei:dataQuality", namespaces=NAMESPACES)
@@ -187,8 +208,9 @@ class TelemetryUsageReport(OadrReport):
             accuracy_i = accuracy.text if accuracy is not None else ""
             dataQuality_i = dataQuality.text if dataQuality is not None else ""
 
-            TMP = self.get_datapoint_model(rid_i)
+            datatype = parse_rid(rid_i)[-1]
+            TMP = self.get_datapoint_model(datatype)
 
             data = TMP(report_id, dt_start_i, duration_i, uid_i, rid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
             data.save()
-            r.add_dataType(rid_i)
+            r.add_dataType(datatype)
