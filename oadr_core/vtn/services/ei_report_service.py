@@ -3,11 +3,11 @@ from datetime import datetime
 from lxml import etree
 
 from oadr_core.oadr_base_service import OadrMessage
-from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES, pretty_print_xml
+from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
     oadrUpdatedReport, oadrCanceledReport, oadrRegisterReport, oadrUpdateReport, oadrCancelReport, oadrCreateReport
 from oadr_core.oadr_payloads.reports.reports_installed import available_reports
-from oadr_core.vtn.models import VEN, MetadataReportSpec, DataPoint, ReportsToSend
+from project_customization.flexcoop.models import VEN, MetadataReportSpec, DataPoint, ReportsToSend
 
 
 def _auto_subsciption_reports(params):

@@ -1,7 +1,7 @@
 from lxml.builder import ElementMaker
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, ELEMENTS, eiResponse
-from oadr_core.vtn.models import EventSignal, Event, EventInterval
+from project_customization.flexcoop.models import EventSignal, EventInterval
 
 
 def oadrEvent(event):

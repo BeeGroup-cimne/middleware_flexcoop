@@ -1,13 +1,10 @@
-import time
-
 import requests
 from flask import request, abort, Response, Blueprint, current_app as app
 from lxml import etree
 
-import settings
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.vtn.after_request import AfterResponse
-from oadr_core.vtn.models import oadrPollQueue, VEN
+from project_customization.flexcoop.models import VEN
 from oadr_core.vtn.services.ei_event_service import OadrCreatedEvent, OadrDistributeEvent
 from oadr_core.vtn.services.ei_register_party_service import OadrQueryRegistration, OadrCreatePartyRegistration, \
     OadrCancelPartyRegistration, OadrRequestReregistration, OadrCanceledPartyRegistration

@@ -3,8 +3,8 @@ from sqlalchemy.event import Events
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_event_service import oadrDistributeEvent
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, oadrResponse, oadrPayload
-from oadr_core.vtn.configuration import VTN_ID
-from oadr_core.vtn.models import VEN
+from project_customization.base_customization import project_configuration
+from project_customization.flexcoop.models import VEN
 
 
 class OadrCreatedEvent(OadrMessage):
@@ -44,5 +44,5 @@ class OadrDistributeEvent(OadrMessage):
     def _create_message(self, params):
         events = Events.find({})
         requestID = params['requestID']
-        content = oadrDistributeEvent("200", "OK", requestID, requestID, VTN_ID, events)
+        content = oadrDistributeEvent("200", "OK", requestID, requestID, project_configuration.VTN_ID, events)
         return oadrPayload(content)

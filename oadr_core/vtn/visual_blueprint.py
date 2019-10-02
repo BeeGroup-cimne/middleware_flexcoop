@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for
 
 from oadr_core.vtn.server_blueprint import send_message
-from oadr_core.vtn.models import VEN, MetadataReportSpec, oadrPollQueue, DataPoint, Event, EventSignal, EventInterval
+from project_customization.flexcoop.models import VEN, MetadataReportSpec, oadrPollQueue, DataPoint, Event, EventSignal, EventInterval
 from oadr_core.vtn.services.ei_register_party_service import OadrCancelPartyRegistration, OadrRequestReregistration
 from oadr_core.vtn.services.ei_report_service import OadrCreateReport, OadrCancelReport
 from oadr_core.vtn.web_forms import EventForm, EventSignalForm

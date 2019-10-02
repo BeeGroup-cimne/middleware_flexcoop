@@ -1,6 +1,5 @@
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, oadrResponse, oadrPayload
-from oadr_core.vtn.models import oadrPollQueue
 
 
 class OadrPoll(OadrMessage):

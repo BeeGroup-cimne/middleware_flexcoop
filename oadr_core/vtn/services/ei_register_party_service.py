@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from lxml import etree
+
+from oadr_core.exceptions import InvalidVenException
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, NAMESPACES, oadrResponse
 from oadr_core.oadr_payloads.oadr_payloads_register_service import oadrCreatedPartyRegistration, \
     oadrCanceledPartyRegistration, oadrRequestReregistration, oadrCancelPartyRegistration
-from oadr_core.vtn.configuration import *
-from oadr_core.vtn.models import VEN, DataPoint, MetadataReportSpec
+from project_customization.base_customization import project_configuration
 
 
 class OadrQueryRegistration(OadrMessage):
@@ -18,8 +19,9 @@ class OadrQueryRegistration(OadrMessage):
         # """"""
 
         #respond
-        content = oadrCreatedPartyRegistration("200", "OK", str(requestID), None, None, str(VTN_ID),
-                                            profiles, str(poll_freq), specific_info, extensions)
+        content = oadrCreatedPartyRegistration("200", "OK", str(requestID), None, None, str(project_configuration.VTN_ID),
+                                               project_configuration.profiles, str(project_configuration.poll_freq),
+                                               project_configuration.specific_info, project_configuration.extensions)
         return oadrPayload(content)
 
 
@@ -53,34 +55,16 @@ class OadrCreatePartyRegistration(OadrMessage):
         oadrHttpPullModel = True if oadrHttpPullModel == 'true' else False
 
         # respond
-        if not registrationID:
-            if venID:
-                ven = VEN.find_one({VEN.venID(): venID})
-                if ven:
-                    content = oadrCreatedPartyRegistration("452", "Invalid venID", str(requestID), str(registrationID),
-                                                           None, str(VTN_ID), profiles, str(poll_freq), specific_info,
-                                                           extensions)
-                    return oadrPayload(content)
-            ven = VEN(venID, registrationID, oadrProfileName, oadrTransportName, oadrTransportAddress,
-                      oadrReportOnly, oadrXmlSignature, oadrVenName, oadrHttpPullModel)
-            ven.registrationID = str(ven.venID)
-        else:
-            ven = VEN.find_one({VEN.registrationID():registrationID})
-            if not ven or str(ven.venID) != venID:
-                content = oadrCreatedPartyRegistration("452", "Invalid venID", str(requestID), str(registrationID), None, str(VTN_ID), profiles, str(poll_freq), specific_info, extensions)
-                return oadrPayload(content)
+        try:
+            code, description, registrationID, venID = project_configuration.on_OadrCreatePartyRegistration_recieve(requestID, oadrProfileName, oadrTransportName, oadrReportOnly, oadrXmlSignature, registrationID, venID, oadrTransportAddress, oadrVenName, oadrHttpPullModel)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
 
-            ven.oadrProfileName = oadrProfileName
-            ven.oadrTransportName = oadrTransportName
-            ven.oadrTransportAddress = oadrTransportAddress
-            ven.oadrReportOnly = oadrReportOnly
-            ven.oadrXmlSignature = oadrXmlSignature
-            ven.oadrVenName = oadrVenName
-            ven.oadrHttpPullModel = oadrHttpPullModel
-
-        ven.save()
-        content = oadrCreatedPartyRegistration("200", "OK", str(requestID), str(ven.registrationID), str(ven.venID), str(VTN_ID),
-                                            profiles, str(poll_freq), specific_info, extensions)
+        content = oadrCreatedPartyRegistration(code, description, str(requestID), str(registrationID), str(venID),
+                                               str(project_configuration.VTN_ID), project_configuration.profiles,
+                                               str(project_configuration.poll_freq), project_configuration.specific_info,
+                                               project_configuration.extensions)
         return oadrPayload(content)
 
 
@@ -95,18 +79,17 @@ class OadrCancelPartyRegistration(OadrMessage):
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
-        venID = venID_.text if venID_ is not None else None
+        venID = venID_.text if venID_ is not None else ""
 
         # respond
-        ven = VEN.find_one({VEN.registrationID():registrationID})
-        if str(ven.venID) != venID:
-            content = oadrCanceledPartyRegistration("452", "Invalid venID", str(requestID), str(registrationID), str(venID))
-            return oadrPayload(content)
-        ven.remove_reports()
-        ven.delete()
-        content = oadrCanceledPartyRegistration("200", "OK", str(requestID), str(registrationID), str(venID))
-        return oadrPayload(content)
+        try:
+            code, description = project_configuration.on_OadrCancelPartyRegistration_recieve(requestID, registrationID, venID)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
 
+        content = oadrCanceledPartyRegistration(code, description, str(requestID), str(registrationID), str(venID))
+        return oadrPayload(content)
 
     def _create_message(self, params):
         """ this will delete the vtn and all information without wainting for the response. We can't rely on the VEN to
@@ -114,27 +97,25 @@ class OadrCancelPartyRegistration(OadrMessage):
         registrationID = params['registrationID']
         requestID = params['requestID']
         venID = params['venID']
-        ven = VEN.find_one({VEN.registrationID():registrationID})
+        project_configuration.on_OadrCancelPartyRegistration_recieve(registrationID, requestID, venID)
         content = oadrCancelPartyRegistration(registrationID, requestID, venID)
-        ven.remove_reports()
-        ven.delete()
         return oadrPayload(content)
 
     def response_callback(self, response):
         response = etree.fromstring(response.text)
         if self._schema_val(response):
             final_parameters = response.xpath(".//oadr:oadrCancelPartyRegistration", namespaces=NAMESPACES)[0]
-            print(final_parameters.find(".//ei:responseDescription", namespaces=NAMESPACES).text)
-            #TODO: see if we have to do something with the response
+            # TODO: set the parameters to the function
+            project_configuration.on_OadrCancelPartyRegistration_response()
 
 
 class OadrCanceledPartyRegistration(OadrMessage):
-    # As we have removed VEN on sending the cancel, we only need to return OK
     def _create_response(self, params):
         final_parameters = params.xpath(".//oadr:oadrCanceledPartyRegistration", namespaces=NAMESPACES)[0]
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
-        content = oadrResponse("200", "OK", requestID, venID)
+        code, description = project_configuration.on_OadrCanceledPartyRegistration_recieve(requestID, venID)
+        content = oadrResponse(code, description, requestID, venID)
         return oadrPayload(content)
 
 
@@ -142,6 +123,7 @@ class OadrRequestReregistration(OadrMessage):
     def _create_message(self, params):
         # Mandatory parameters
         venID = params['venID']
+        project_configuration.on_OadrRequestReregistration_send(venID)
         content = oadrRequestReregistration(venID)
         return oadrPayload(content)
 
@@ -149,8 +131,8 @@ class OadrRequestReregistration(OadrMessage):
         response = etree.fromstring(response.text)
         if self._schema_val(response):
             final_parameters = response.xpath(".//oadr:oadrResponse", namespaces=NAMESPACES)[0]
-            print(final_parameters.find(".//ei:responseDescription", namespaces=NAMESPACES).text)
-            #TODO: see if we have to do something with the response
+            # TODO: set the parameters to the function
+            project_configuration.on_OadrRequestReregistration_response()
 
 """
 #Query Registration
@@ -158,7 +140,7 @@ from lxml import etree
 from oadr_core.vtn.services.ei_register_party_service import OadrQueryRegistration
 from oadr_core.oadr_payloads.oadr_payloads_general import pretty_print_xml
 responder = OadrQueryRegistration()
-xml_t = etree.parse(open('oadr_core/oadr_xml_example/ei_register_service/query_registration.xml'))
+xml_t = etree.parse(open('oadr_core/oadr_xml_example/ei_register_service/oadrQueryRegistration.xml'))
 response = responder.respond(xml_t)
 pretty_print_xml(response)
 

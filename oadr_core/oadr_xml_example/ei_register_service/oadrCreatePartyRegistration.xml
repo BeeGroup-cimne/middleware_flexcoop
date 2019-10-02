@@ -1,13 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<oadr:oadrCreatePartyRegistration oadr:schemaVersion="2.0a" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:clm5ISO42173A="urn:un:unece:uncefact:codelist:standard:5:ISO42173A:2010-04-07" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ei="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:emix="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:oadr="http://openadr.org/oadr-2.0b/2012/07" xmlns:power="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:pyld="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:scale="http://docs.oasis-open.org/ns/emix/2011/06/siscale" xmlns:strm="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:xcal="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://openadr.org/oadr-2.0b/2012/07 oadr_20b.xsd ">
-  <pyld:requestID>pyld:requestID</pyld:requestID>
-  <ei:registrationID>ei:registrationID</ei:registrationID>
-  <ei:venID>ei:venID</ei:venID>
-  <oadr:oadrProfileName>2.0a</oadr:oadrProfileName>
-  <oadr:oadrTransportName>simpleHttp</oadr:oadrTransportName>
-  <oadr:oadrTransportAddress>oadr:oadrTransportAddress</oadr:oadrTransportAddress>
-  <oadr:oadrReportOnly>true</oadr:oadrReportOnly>
-  <oadr:oadrXmlSignature>true</oadr:oadrXmlSignature>
-  <oadr:oadrVenName>oadr:oadrVenName</oadr:oadrVenName>
-  <oadr:oadrHttpPullModel>true</oadr:oadrHttpPullModel>
-</oadr:oadrCreatePartyRegistration>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns8:oadrPayload xmlns="http://www.w3.org/2000/09/xmldsig#" xmlns:ns2="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:ns3="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:ns4="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:ns5="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:ns6="http://naesb.org/espi" xmlns:ns7="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:ns8="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns9="http://www.w3.org/2005/Atom" xmlns:ns10="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns11="http://www.opengis.net/gml/3.2" xmlns:ns12="http://docs.oasis-open.org/ns/emix/2011/06/siscale" xmlns:ns13="http://www.w3.org/2009/xmldsig11#" xmlns:ns14="urn:un:unece:uncefact:codelist:standard:5:ISO42173A:2010-04-07">
+    <ns8:oadrSignedObject>
+        <ns8:oadrCreatePartyRegistration>
+            <ns3:requestID>pyld:requestID</ns3:requestID>
+            <ns2:registrationID></ns2:registrationID>
+            <ns2:venID></ns2:venID>
+            <ns8:oadrProfileName>2.0a</ns8:oadrProfileName>
+            <ns8:oadrTransportName>simpleHttp</ns8:oadrTransportName>
+            <ns8:oadrTransportAddress>oadr:oadrTransportAddress</ns8:oadrTransportAddress>
+            <ns8:oadrReportOnly>true</ns8:oadrReportOnly>
+            <ns8:oadrXmlSignature>true</ns8:oadrXmlSignature>
+            <ns8:oadrVenName>oadr:oadrVenName</ns8:oadrVenName>
+            <ns8:oadrHttpPullModel>true</ns8:oadrHttpPullModel>
+        </ns8:oadrCreatePartyRegistration>
+    </ns8:oadrSignedObject>
+</ns8:oadrPayload>
+
