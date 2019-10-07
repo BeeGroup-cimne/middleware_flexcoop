@@ -2,25 +2,23 @@
 from datetime import datetime
 from lxml import etree
 
+from oadr_core.exceptions import InvalidVenException, InvalidResponseException, InvalidReportException
 from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
     oadrUpdatedReport, oadrCanceledReport, oadrRegisterReport, oadrUpdateReport, oadrCancelReport, oadrCreateReport
-from oadr_core.oadr_payloads.reports.reports_installed import available_reports
-from project_customization.flexcoop.models import VEN, MetadataReportSpec, DataPoint, ReportsToSend
-
-
-def _auto_subsciption_reports(params):
-    """Subscribe programatically to reports by adding them to the response of oadrRegisteredReport.
-    This is done for registering to some reports when the first metadata is recieved
-    """
-    # TODO: get reports registerd by a VEN and prepare the subscription to the required ones
-    # report_types = [{"reportId": "reportId", "specifierId": "specifierId", "data_points":[{"rid":"a", "reading_type":"Direct Read"},{"rid":"b", "reading_type": "Direct Read"}]}]
-    return []
+from project_customization.base_customization import project_configuration
 
 
 class OadrRegisterReport(OadrMessage):
+    """Class to deal with Report registration
+
+        create_response: The VEN sends the metadata report with all the reports
+        create_message: The VTN sends the metadata report with all the reports (PUSH or PULL)
+        response_callback: The VEN PUSH that responds to the "create_message" with the registered_reports if any
+    """
     def _create_response(self, params):
+        """recieves a RegisterReport"""
         # get information of needed parameters
         final_parameters = params.xpath(".//oadr:oadrRegisterReport", namespaces=NAMESPACES)[0]
 
@@ -30,140 +28,132 @@ class OadrRegisterReport(OadrMessage):
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
-        reportRequestID_ = final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES)
-        reportRequestID = reportRequestID_.text if reportRequestID_ is not None else None
 
         # respond
-        ven = VEN.find_one({VEN.venID():venID})
-        if ven is None:
-            content = oadrRegisteredReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
-
-        ven.remove_reports()
-        for r in final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES):
-            owned = False
-            reportID = r.find('.//ei:eiReportID', namespaces=NAMESPACES).text
-            specifierID = r.find('.//ei:reportSpecifierID', namespaces=NAMESPACES).text
-            duration = r.find('.//xcal:duration/xcal:duration', namespaces=NAMESPACES).text
-            name = r.find('.//ei:reportName', namespaces=NAMESPACES).text
-            created = datetime.strptime(r.find('.//ei:createdDateTime', namespaces=NAMESPACES).text[:19],
-                                               "%Y-%m-%dT%H:%M:%S")
-            report = MetadataReportSpec(ven._id, reportID, specifierID, duration, name, created)
-            report.save()
-            for d in r.findall('.//oadr:oadrReportDescription', namespaces=NAMESPACES):
-                rid= d.find('.//ei:rID', namespaces=NAMESPACES).text
-                report_subject_ = d.find(".//power:mrid", namespaces=NAMESPACES)
-                report_subject = None #report_subject_.text if report_subject_ else None
-                report_source = None
-                report_type = d.find(".//ei:reportType", namespaces=NAMESPACES).text
-                #report_item = d.find(".//emix:itemBase/*", namespaces=NAMESPACES).tag
-                report_reading = d.find(".//ei:readingType", namespaces=NAMESPACES).text
-                market_context = d.find(".//emix:marketContext", namespaces=NAMESPACES).text if d.find(".//emix:marketContext", namespaces=NAMESPACES) is not None else None
-                min_sampling = d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES).text if d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
-                max_sampling = d.find(".//oadr:oadrMaxPeriod", namespaces=NAMESPACES).text if d.find(".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
-                onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES) is not None else None
-                data_point = DataPoint(report._id, rid,  report_type, report_reading, market_context, min_sampling, max_sampling, onChange)
-                data_point.save()
-
-        report_types = _auto_subsciption_reports({})
-        content = oadrRegisteredReport("200", "OK", str(requestID), report_types, venID)
+        try:
+            code, description, report_types = project_configuration.on_OadrRegisterReport_recieved(requestID, venID, final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES))
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+            report_types = []
+        except InvalidReportException as e:
+            code = e.code
+            description = e.description
+            report_types = []
+        content = oadrRegisteredReport(code, description, str(requestID), report_types, venID)
         return oadrPayload(content)
 
     def _create_message(self, params):
+        """send a RegisterReport message"""
         # This is an automatic generation, as it will depend on the "database metadata reports owned"
-        db_reports = MetadataReportSpec.find({MetadataReportSpec.owned(): True})
-        requestID = "0"
-        reports = [{"duration":db_r.duration, "eiReportID": db_r.eiReportID,
-                    "data_points":[{"rID": dp.rID, "oadrMinPeriod": dp.oadrMinPeriod, "oadrMaxPeriod": dp.oadrMaxPeriod,
-                                    "oadrOnChange": dp.oadrOnChange, "marketContext": dp.marketContext,
-                                    "reportType": dp.reportType, "readingType": dp.readingType} for dp in DataPoint.find({DataPoint.report():db_r._id})],
-                    "reportRequestID": "0", "reportSpecifierID": db_r.specifierID,
-                    "reportName": db_r.reportName, "createdDateTime": db_r.createdDateTime.strftime("%Y-%m-%dT%H:%M:%S")
-                    } for db_r in db_reports]
         venID = params['venID']
-
+        requestID, reportRequestID, reports = project_configuration.on_OadrRegisterReport_send(venID)
         content = oadrRegisterReport(requestID, requestID, venID, reports)
-
         return oadrPayload(content)
 
     def response_callback(self, response):
+        """response to RegisterReport message sent"""
         params = etree.fromstring(response.text)
         if self._schema_val(params):
-            OadrRegisteredReport.register_reports(params)
+            final_parameters = params.xpath(".//oadr:oadrRegisteredReport", namespaces=NAMESPACES)[0]
+            response_code = final_parameters(".//ei:responseCode", namespaces=NAMESPACES).text
+            responseDescription = final_parameters(".//ei:responseDescription", namespaces=NAMESPACES).text
+            oadrReportRequest = final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES)
+            venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
+            requestID = final_parameters.find(".//pyld:requestID", namespace=NAMESPACES).text
+            try:
+                project_configuration.on_OadrRegisterReport_response(response_code, responseDescription, venID, oadrReportRequest)
+            except InvalidVenException as e:
+                print("Recieved an invalid VEN")
+            except InvalidResponseException as e:
+                print("Invalid response with code {} due to {}".format(e.code, e.description))
 
-def register_report(r_request):
-    reportSpecifierID = r_request.find(".//ei:reportSpecifierID", namespaces=NAMESPACES).text
-    reportRequestID = r_request.find(".//ei:reportRequestID", namespaces=NAMESPACES).text
-    granularity = r_request.find(".//xcal:granularity/xcal:duration", namespaces=NAMESPACES).text
-    reportBackDuration = r_request.find(".//ei:reportBackDuration/xcal:duration", namespaces=NAMESPACES).text
-    relatedDataPoints = []
-    for dp in r_request.findall(".//ei:specifierPayload", namespaces=NAMESPACES):
-        rID = dp.find(".//ei:rID", namespaces=NAMESPACES).text
-        readingType = dp.find(".//ei:readingType", namespaces=NAMESPACES)
-        db_dp = DataPoint.find_one({DataPoint.rID(): rID, DataPoint.readingType(): readingType})
-        relatedDataPoints.append(db_dp._id)
-    report = MetadataReportSpec.find_one(
-        {MetadataReportSpec.owned(): True, MetadataReportSpec.specifierID(): reportSpecifierID})
-    report_subscription = ReportsToSend(report._id, reportRequestID, granularity, reportBackDuration,
-                                        relatedDataPoints)
-    report_subscription.save()
 
 class OadrRegisteredReport(OadrMessage):
-    @staticmethod
-    def register_reports(params):
+    """Class to deal with the report registration
+        create_response: response of VEN with PULL method that recieved the OadrRegisterReport message
+    """
+    def _create_response(self, params):
+        """response to RegisteredReport message"""
         final_parameters = params.xpath(".//oadr:oadrRegisteredReport", namespaces=NAMESPACES)[0]
         response_code = final_parameters(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters(".//ei:responseDescription", namespaces=NAMESPACES).text
         oadrReportRequest = final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES)
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
         requestID = final_parameters.find(".//pyld:requestID", namespace=NAMESPACES).text
-        ven = VEN.find_one({VEN.venID(): venID})
-        if response_code == "200" and oadrReportRequest is not None:
-            for r_request in oadrReportRequest:
-                register_report(r_request)
-        content = oadrResponse("200", "OK", str(requestID), venID)
-        return content
+        try:
+            code, description = project_configuration.on_OadrRegisteredReport_recieved(response_code, responseDescription, venID,
+                                                                 oadrReportRequest)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+            print("Recieved an invalid VEN")
 
-    def _create_response(self, params):
-        content = OadrRegisteredReport.register_reports(params)
+        except InvalidResponseException as e:
+            code = e.code
+            description = e.description
+            print("Invalid response with code {} due to {}".format(e.code, e.description))
+
+        content = oadrResponse(code, description, str(requestID), venID)
         return oadrPayload(content)
 
 
 class OadrCreatedReport(OadrMessage):
-    @staticmethod
-    def created_report(params):
-        # get information of needed parameters
+    """
+    Class to deal with the report subscription
+    create_response: the VTN recieved report subscription by the VEN after a OadrCreateReport send message via PULL
+    create_message: the VTN subscribes to reports in the VEN (PUSH and PULL)
+    """
+    def _create_response(self, params):
+        """"""
         final_parameters = params.xpath(".//oadr:oadrCreatedReport", namespaces=NAMESPACES)[0]
 
         # Mandatory parameters
-        pending_reports = final_parameters.find(".//oadr:oadrPendingReports", namespaces=NAMESPACES)
+        pending_reports = final_parameters.findall(".//oadr:oadrPendingReports", namespaces=NAMESPACES)
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
 
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
 
-        # respond
+        try:
+            code, description = project_configuration.on_OadrCreatedReport_recieved(venID, pending_reports)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
 
-        ven = VEN.find_one({VEN.venID():venID})
-        if ven is None:
-            content = oadrResponse("452", "Invalid venID", str(requestID), venID)
-            return oadrPayload(content)
-        #TODO: do watever with pending reports
-        content = oadrResponse("200", "OK", str(requestID), venID)
-        return content
-
-    def _create_response(self, params):
-        content = OadrCreatedReport.created_report(params)
+        content = oadrResponse(code, description, str(requestID), venID)
         return oadrPayload(content)
 
     def _create_message(self, params):
         venID = params['venID']
-        ven = VEN.find_one({VEN.venID:venID})
-        pending_reports = []
-        for rep in MetadataReportSpec.find({MetadataReportSpec.ven: ven._id}):
-            pending_reports.extend([r.reportRequestID for r in ReportsToSend.find({ReportsToSend.report:rep._id})])
-        content = oadrCreatedReport("200", "OK", "10", pending_reports, "0")
+        # TODO: define request ID
+        requestID = 0
+        try:
+            code, description, pending_reports = project_configuration.on_OadrCreatedReport_send(venID)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+            pending_reports = None
+
+        content = oadrCreatedReport(code, description, requestID, pending_reports, venID)
         return oadrPayload(content)
+
+    def response_callback(self, params):
+        """response to oadrResponse recieved"""
+        final_parameters = params.xpath(".//oadr:oadrResponse", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        responseCode = final_parameters.find(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters.find(".//ei:responseDescription", namespaces=NAMESPACES).text
+
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+        try:
+            project_configuration.on_OadrCreatedReport_response(venID, responseCode, responseDescription)
+        except InvalidResponseException as e:
+            print(e)
 
 class OadrUpdateReport(OadrMessage):
     def _create_response(self, params):
@@ -175,45 +165,73 @@ class OadrUpdateReport(OadrMessage):
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
-        ven = VEN.find_one({VEN.venID(): venID})
-
-        if ven is None:
-            content = oadrUpdatedReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
+        try:
+            code, description, cancel_reports = project_configuration.on_OadrUpdateReport_recieved(venID, reports)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+            cancel_reports = None
+        except InvalidReportException as e:
+            code = e.code
+            description = e.description
+            cancel_reports = None
 
-        for report in reports:
-            try:
-                type_r = report.find(".//ei:reportName", namespaces=NAMESPACES).text
-            except AttributeError as e:
-                type_r = "Undefinded reportName"
-                print(e)
-            try:
-                report_type = available_reports[type_r]
-                report_type.parse(report)
-                #TODO Report Send to Hypertech
-            except Exception as e:
-                print(e)
-                print("Recieved unsuported report {}".format(type_r))
-                content = oadrUpdatedReport("452", "unsuported report {}".format(type_r), str(requestID), None, venID)
-                return oadrPayload(content)
-        content = oadrUpdatedReport("200", "OK", str(requestID), None, venID)
+        content = oadrUpdatedReport(code, description, str(requestID), cancel_reports, venID)
         return oadrPayload(content)
 
     def _create_message(self, params):
         venID = params['venID']
         requestID = params['requestID']
-        reports_dic=[]
-        for rep in ReportsToSend.find({}):
-            # TODO Get data from report
-            if rep.canceled:
-                rep.delete()
+        reports_dic = project_configuration.on_OadrUpdateReport_send(venID)
         content = oadrUpdateReport(requestID, reports_dic, venID)
         return oadrPayload(content)
 
+    def response_callback(self, params):
+        """response to update report sent"""
+        final_parameters = params.xpath(".//oadr:oadrUpdatedReport", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        responseCode = final_parameters.find(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters.find(".//ei:responseDescription", namespaces=NAMESPACES).text
+
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+        cancelReports = final_parameters.findall(".//ei:reportRequestID")
+        try:
+            project_configuration.on_OadrUpdateReport_response(venID, responseCode, responseDescription, cancelReports)
+        except InvalidResponseException as e:
+            print(e)
+
+class OadrUpdatedReport(OadrMessage):
+    def _create_response(self, params):
+        final_parameters = params.xpath(".//oadr:oadrUpdatedReport", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        responseCode = final_parameters.find(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters.find(".//ei:responseDescription", namespaces=NAMESPACES).text
+        requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+        cancelReports = final_parameters.findall(".//ei:reportRequestID")
+        try:
+            code, description = project_configuration.on_OadrUpdatedReport_recieved(venID, responseCode, responseDescription, cancelReports)
+        except InvalidResponseException as e:
+            print(e)
+        content = oadrResponse(code, description, str(requestID), venID)
+        return oadrPayload(content)
 
 class OadrCreateReport(OadrMessage):
+    """
+    Class to manage the reports to subscribe
+    create_response: The VEN requests some reports to the VTN
+    create_message: The VTN registers to some reports in the VEN (PUSH or PULL)
+    response_callback: The VEN PUSH responds the "create_message" with a oadrCreatedReport
+    """
     def _create_response(self, params):
+        """response to CreateReport message"""
         # get information of needed parameters
         final_parameters = params.xpath(".//oadr:oadrCreateReport", namespaces=NAMESPACES)[0]
 
@@ -223,19 +241,19 @@ class OadrCreateReport(OadrMessage):
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
-        ven = VEN.find_one({VEN.venID(): venID})
-        # respond
-        if ven is None:
-            content = oadrCreatedReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
 
-        for r_request in final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES):
-            register_report(r_request)
+        try:
+            code, description, pending_reports = project_configuration.on_OadrCreateReport_recieved(venID, final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES))
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+            pending_reports = None
 
-        content = oadrCreatedReport("200", "OK", str(requestID), None, venID)
+        content = oadrCreatedReport(code, description, str(requestID), pending_reports, venID)
         return oadrPayload(content)
 
     def _create_message(self, params):
+        """send a CreateReport message"""
         # get pending reports
         report_types=params['report_types']
         requestID = params['requestID']
@@ -244,7 +262,23 @@ class OadrCreateReport(OadrMessage):
         return oadrPayload(content)
 
     def response_callback(self, params):
-        OadrCreatedReport.created_report(params)
+        """response to CreatedReport recieved"""
+        final_parameters = params.xpath(".//oadr:oadrCreatedReport", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        pending_reports = final_parameters.findall(".//oadr:oadrPendingReports", namespaces=NAMESPACES)
+        requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
+
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+
+        try:
+            code, description = project_configuration.on_OadrCreateReport_response(venID, pending_reports)
+        except InvalidVenException as e:
+            code = e.code
+            description = e.description
+
 
 class OadrCancelReport(OadrMessage):
     def _create_response(self, params):
@@ -253,29 +287,17 @@ class OadrCancelReport(OadrMessage):
 
         # Mandatory parameters
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
-        report_to_follow = final_parameters.find(".//pyld:reportToFollow", namespaces=NAMESPACES)
-        report_to_follow = True if report_to_follow == 'true' else False
+        report_to_follow = final_parameters.findall(".//pyld:reportToFollow", namespaces=NAMESPACES)
+        report_to_follow = [True if r =="true" else False for r in report_to_follow]
+        cancel_reports = [x.text for x in final_parameters.findall(".//ei:reportRequestID", namespaces=NAMESPACES)]
+
         # Optional parameters
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
 
         # respond
-        ven = VEN.find_one({VEN.venID(): venID})
-        if ven is None:
-            content = oadrCanceledReport("452", "Invalid venID", str(requestID), None, venID)
-            return oadrPayload(content)
-
-        for report_request in final_parameters.find(".//ei:reportRequestID", namespaces=NAMESPACES):
-            report = ReportsToSend.find_one({ReportsToSend.reportRequestID:report_request})
-            if report_to_follow:
-                report.canceled=True
-                report.save()
-            else:
-                report.delete()
-        pending_reports = []
-        for rep in MetadataReportSpec.find({MetadataReportSpec.ven: ven._id}):
-            pending_reports.extend([r.reportRequestID for r in ReportsToSend.find({ReportsToSend.report: rep._id})])
-        content = oadrCanceledReport("200", "OK", str(requestID), pending_reports, venID)
+        code, description, pending_reports = project_configuration.on_OadrCancelReport_recieved(venID, cancel_reports, report_to_follow)
+        content = oadrCanceledReport(code, description, str(requestID), pending_reports, venID)
         return oadrPayload(content)
 
     def _create_message(self, params):
@@ -284,6 +306,50 @@ class OadrCancelReport(OadrMessage):
         venID = params['venID']
         followUp = 'true' if params['followUp'] else 'false'
         content = oadrCancelReport(cancel_report, requestID, venID, followUp)
+        return oadrPayload(content)
+
+    def response_callback(self, params):
+        """response to CancelReport recieved"""
+        final_parameters = params.xpath(".//oadr:oadrCanceledReport", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        pending_reports = final_parameters.findall(".//oadr:oadrPendingReports", namespaces=NAMESPACES)
+        requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
+        response_code = final_parameters(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters(".//ei:responseDescription", namespaces=NAMESPACES).text
+
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+
+        try:
+            code, description = project_configuration.on_OadrCancelReport_response(response_code, responseDescription, pending_reports)
+        except InvalidResponseException as e:
+            code = e.code
+            description = e.description
+            print(description)
+
+
+class OadrCanceledReport(OadrMessage):
+    def _create_response(self, params):
+        final_parameters = params.xpath(".//oadr:oadrCanceledReport", namespaces=NAMESPACES)[0]
+
+        # Mandatory parameters
+        pending_reports = final_parameters.findall(".//oadr:oadrPendingReports", namespaces=NAMESPACES)
+        requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
+        responseCode = final_parameters(".//ei:responseCode", namespaces=NAMESPACES).text
+        responseDescription = final_parameters(".//ei:responseDescription", namespaces=NAMESPACES).text
+
+        # Optional parameters
+        venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
+        venID = venID_.text if venID_ is not None else ""
+
+        try:
+            code, description = project_configuration.on_OadrCanceledReport_recieved(venID, responseCode, responseDescription, pending_reports)
+        except InvalidResponseException as e:
+            code = e.code
+            description = e.description
+        content = oadrResponse(code, description, str(requestID), venID)
         return oadrPayload(content)
 
 

@@ -1,5 +1,5 @@
 class OadrReport():
-    def create(self, reportRequestId, reportSpecifierID, created, reportID, dt_start, duration, intervals):
+    def create(self, *args, **kwargs):
         raise NotImplementedError("This is an abstract class")
-    def parse(self, oadrReport):
+    def parse(self, oadrReport, *args, **kwargs):
         raise NotImplementedError("This is an abstract class")

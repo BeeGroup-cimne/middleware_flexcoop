@@ -15,7 +15,7 @@ xmlparser = etree.XMLParser()
 schema_val_data = etree.parse(open("oadr_core/oadr_xml_schema/oadr_20b.xsd"), xmlparser)
 schema_val = etree.XMLSchema(schema_val_data)
 
-venID = ""
+venID = "VEN.ID:1395090780716"
 registrationID = ""
 
 def register_ven(venID = None, registrationID= None):
@@ -25,31 +25,33 @@ def register_ven(venID = None, registrationID= None):
     r = requests.post(MIDDLEWARE_URL+"EiRegisterParty", data=etree.tostring(oadrPayload(content)), verify=False)
     response = etree.fromstring(r.text)
     code = response.find(".//ei:responseCode", namespaces=NAMESPACES).text
+    description = response.find(".//ei:responseDescription", namespaces=NAMESPACES).text
     if code != "200":
-        return
+        raise Exception("error invalid code {} {}".format(code, description))
     venID = response.find(".//ei:venID", namespaces=NAMESPACES).text
     registrationID = response.find(".//ei:registrationID", namespaces=NAMESPACES).text
 
     return venID, registrationID
 
 def send_metadata_report(venID):
-    requestID = "0"  # nobody requested this report
-    reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
-                "duration": "P3Y6M4DT12H30M5S",
-                "reportRequestID": "0", "createdDateTime": datetime.utcnow().isoformat(),
-                "data_points": [{"rID": "m3", "reportType": "usage", "readingType": "Direct Read",
-                                 "oadrMinPeriod": "P3Y6M4DT12H30M5S",
-                                 "oadrMaxPeriod": "P3Y6M4DT12H30M5S", "oadrOnChange": False,
-                                 "market_context": "the market context"}]
-                }]
-    content = oadrRegisterReport(requestID, requestID, venID, reports)
-    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(oadrPayload(content)), verify=False)
+    # requestID = "0"  # nobody requested this report
+    # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
+    #             "duration": "P3Y6M4DT12H30M5S",
+    #             "reportRequestID": "0", "createdDateTime": datetime.utcnow().isoformat(),
+    #             "data_points": [{"rID": "m3", "reportType": "usage", "readingType": "Direct Read",
+    #                              "oadrMinPeriod": "P3Y6M4DT12H30M5S",
+    #                              "oadrMaxPeriod": "P3Y6M4DT12H30M5S", "oadrOnChange": False,
+    #                              "market_context": "the market context"}]
+    #             }]
+    # content = oadrRegisterReport(requestID, requestID, venID, reports)
+    content = etree.parse("oadr_core/oadr_xml_example/ei_report_service/metadata_report.xml")
+    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
     response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
 
 
-venID, registrationID = register_ven()
+venID, registrationID = register_ven(venID, venID)
 
 send_metadata_report(venID)
 

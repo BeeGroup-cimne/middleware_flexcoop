@@ -5,7 +5,6 @@ from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, eiResponse, 
 
 # define custom and standard reports
 #from oadr_core.oadr_payloads.reports.telemetry_usage import telemetry_usage_report
-from oadr_core.oadr_payloads.reports.reports_installed import available_reports
 
 
 def metadata_telemetry_usage_report(reportRequestId, reportSpecifierID, created, reportID, duration, datapoints):

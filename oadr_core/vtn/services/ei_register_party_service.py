@@ -56,7 +56,7 @@ class OadrCreatePartyRegistration(OadrMessage):
 
         # respond
         try:
-            code, description, registrationID, venID = project_configuration.on_OadrCreatePartyRegistration_recieve(requestID, oadrProfileName, oadrTransportName, oadrReportOnly, oadrXmlSignature, registrationID, venID, oadrTransportAddress, oadrVenName, oadrHttpPullModel)
+            code, description, registrationID, venID = project_configuration.on_OadrCreatePartyRegistration_recieved(requestID, oadrProfileName, oadrTransportName, oadrReportOnly, oadrXmlSignature, registrationID, venID, oadrTransportAddress, oadrVenName, oadrHttpPullModel)
         except InvalidVenException as e:
             code = e.code
             description = e.description
@@ -83,7 +83,7 @@ class OadrCancelPartyRegistration(OadrMessage):
 
         # respond
         try:
-            code, description = project_configuration.on_OadrCancelPartyRegistration_recieve(requestID, registrationID, venID)
+            code, description = project_configuration.on_OadrCancelPartyRegistration_recieved(requestID, registrationID, venID)
         except InvalidVenException as e:
             code = e.code
             description = e.description
@@ -97,7 +97,7 @@ class OadrCancelPartyRegistration(OadrMessage):
         registrationID = params['registrationID']
         requestID = params['requestID']
         venID = params['venID']
-        project_configuration.on_OadrCancelPartyRegistration_recieve(registrationID, requestID, venID)
+        project_configuration.on_OadrCancelPartyRegistration_send(registrationID, requestID, venID)
         content = oadrCancelPartyRegistration(registrationID, requestID, venID)
         return oadrPayload(content)
 
@@ -114,7 +114,7 @@ class OadrCanceledPartyRegistration(OadrMessage):
         final_parameters = params.xpath(".//oadr:oadrCanceledPartyRegistration", namespaces=NAMESPACES)[0]
         requestID = final_parameters.find(".//pyld:requestID", namespaces=NAMESPACES).text
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
-        code, description = project_configuration.on_OadrCanceledPartyRegistration_recieve(requestID, venID)
+        code, description = project_configuration.on_OadrCanceledPartyRegistration_recieved(requestID, venID)
         content = oadrResponse(code, description, requestID, venID)
         return oadrPayload(content)
 

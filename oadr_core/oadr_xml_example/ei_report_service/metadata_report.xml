@@ -7,12 +7,13 @@
                  <urn:duration>
                     <urn:duration>PT10M</urn:duration>
                  </urn:duration>
+                 <ns1:eiReportID>0</ns1:eiReportID>
                 <!-- Luminecence -->
                  <ns:oadrReportDescription>
                      <ns1:rID>multisensor_1_HypertechLab_LabOpenSpace_sensingDevice_2_sensorLuminance</ns1:rID>
                      <ns1:reportSubject>
                         <pow:endDeviceAsset>
-                            <pow:mrid>LigthBulb</pow:mrid>
+                            <pow:mrid>multisensor1</pow:mrid>
                         </pow:endDeviceAsset>
                      </ns1:reportSubject>
                      <ns1:reportDataSource>
@@ -27,9 +28,9 @@
                      <ns1:readingType>Net</ns1:readingType>
                      <ns2:marketContext>http://MarketContext1</ns2:marketContext>
                      <ns:oadrSamplingRate>
-                         <ns:oadrMinPeriod>PT1M</ns:oadrMinPeriod>
-                         <ns:oadrMaxPeriod>PT60M</ns:oadrMaxPeriod>
-                         <ns:oadrOnChange>false</ns:oadrOnChange>
+                         <ns:oadrMinPeriod>PT1S</ns:oadrMinPeriod>
+                         <ns:oadrMaxPeriod>P1DT</ns:oadrMaxPeriod>
+                         <ns:oadrOnChange>true</ns:oadrOnChange>
                      </ns:oadrSamplingRate>
                  </ns:oadrReportDescription>
                 <!-- Indoor temperature -->
@@ -92,12 +93,13 @@
                  <urn:duration>
                     <urn:duration>PT10M</urn:duration>
                  </urn:duration>
+                <ns1:eiReportID>1</ns1:eiReportID>
                 <!-- Luminecence -->
                  <ns:oadrReportDescription>
                      <ns1:rID>multisensor_1_HypertechLab_LabOpenSpace_sensingDevice_2_sensorLuminance</ns1:rID>
                      <ns1:reportSubject>
                         <pow:endDeviceAsset>
-                            <pow:mrid>LigthBulb</pow:mrid>
+                            <pow:mrid>HVAC</pow:mrid>
                         </pow:endDeviceAsset>
                      </ns1:reportSubject>
                      <ns1:reportDataSource>
@@ -132,7 +134,7 @@
                 <ns1:reportName>METADATA_TELEMETRY_STATUS</ns1:reportName>
                 <ns1:createdDateTime>2015-06-12T19:25:12Z</ns1:createdDateTime>
             </ns:oadrReport>
-            <ns1:venID> VEN.ID:1395090780716</ns1:venID>
+            <ns1:venID>VEN.ID:1395090780716</ns1:venID>
         </ns:oadrRegisterReport>
     </ns:oadrSignedObject>
 </ns:oadrPayload>

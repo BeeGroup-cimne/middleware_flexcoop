@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from oadr_core.vtn.server_blueprint import send_message
-from project_customization.flexcoop.models import VEN, MetadataReportSpec, oadrPollQueue, DataPoint, Event, EventSignal, EventInterval
+from project_customization.flexcoop.models import VEN, MetadataReports, oadrPollQueue, DataPoint, Event, EventSignal, EventInterval
 from oadr_core.vtn.services.ei_register_party_service import OadrCancelPartyRegistration, OadrRequestReregistration
 from oadr_core.vtn.services.ei_report_service import OadrCreateReport, OadrCancelReport
 from oadr_core.vtn.web_forms import EventForm, EventSignalForm
@@ -45,7 +45,7 @@ def view_ven_reregister(venID):
 @web.route("/ven_reports/<venID>", methods=['GET','POST'])
 def view_ven_reports(venID):
     ven = VEN.find_one({VEN.venID(): venID})
-    reports = MetadataReportSpec.find({MetadataReportSpec.ven(): ven._id})
+    reports = MetadataReports.find({MetadataReports.ven(): ven._id})
     report_data_points={}
     for report in reports:
         report_data_points[report] = DataPoint.find({DataPoint.report(): report._id})

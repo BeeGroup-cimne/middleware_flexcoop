@@ -41,20 +41,23 @@ class VEN(MongoDB):
         return str(uuid.uuid1())
 
     def remove_reports(self):
-        ven_reports = MetadataReportSpec.find({MetadataReportSpec.ven(): self._id})
+        ven_reports = MetadataReports.find({MetadataReports.ven(): self._id})
         for report in ven_reports:
             points = DataPoint.find({DataPoint.report(): report._id})
+            devices = Device.find({Device.report():reoirt._id})
             for p in points:
                 p.delete()
+            for d in devices:
+                d.delete()
             report.delete()
 
     def __repr__(self):
         return '<VEN {}>'.format(self.oadrVenName)
 
 
-class MetadataReportSpec(MongoDB):
+class MetadataReports(MongoDB):
     """
-       An openadr Metadata_report.
+       An openadr metadata_report.
     """
     __collectionname__ = 'metadata_reports'
     ven = AnyField()
@@ -63,16 +66,14 @@ class MetadataReportSpec(MongoDB):
     duration = AnyField()
     reportName = AnyField()
     createdDateTime = AnyField()
-    owned = AnyField()
     subscribed = AnyField()
-    def __init__(self, ven, eiReportID, specifierID, duration, reportName, createdDateTime=datetime.utcnow(), owned=False, subscribed=False):
+    def __init__(self, ven, eiReportID, specifierID, duration, reportName, createdDateTime=datetime.utcnow(), subscribed=False):
         self.ven = ven
         self.eiReportID = eiReportID
         self.specifierID = specifierID
         self.duration = duration
         self.reportName = reportName
         self.createdDateTime = createdDateTime
-        self.owned = owned
         self.subscribed = subscribed
 
 
@@ -80,13 +81,13 @@ class DataPoint(MongoDB):
     """
        An openadr Metadata_report data_point
     """
-    __collectionname__ = 'datapoints'
+    __collectionname__ = 'data_points'
     report = AnyField()
     rID = AnyField()
-    #reportSubject = AnyField()
-    #reportDataSource = AnyField()
+    reportSubject = AnyField()
+    reportDataSource = AnyField()
     reportType = AnyField()
-    #report_item = Column(Enum(DataPointItemEnum), nullable=True)
+    reportItem = AnyField()
     readingType = AnyField()
     marketContext = AnyField()
     oadrMinPeriod = AnyField()
@@ -94,16 +95,52 @@ class DataPoint(MongoDB):
     oadrOnChange = AnyField()
     subscribed = AnyField()
 
-    def __init__(self, report, rID, reportType, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+    def __init__(self, report, rID, reportSubject, reportDataSource, reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
         self.report = report
         self.rID = rID
+        self.reportSubject = reportSubject
+        self.reportDataSource = reportDataSource
         self.reportType = reportType
+        self.reportItem = reportItem
         self.readingType = readingType
         self.marketContext = marketContext
         self.oadrMinPeriod = oadrMinPeriod
         self.oadrMaxPeriod = oadrMaxPeriod
         self.oadrOnChange = oadrOnChange
         self.subscribed = subscribed
+
+class Device(MongoDB):
+    """
+       An openadr Metadata_report device
+    """
+    __collectionname__ = 'devices'
+    report = AnyField()
+    rID = AnyField()
+    reportSubject = AnyField()
+    reportDataSource = AnyField()
+    reportType = AnyField()
+    reportItem = AnyField()
+    readingType = AnyField()
+    marketContext = AnyField()
+    oadrMinPeriod = AnyField()
+    oadrMaxPeriod = AnyField()
+    oadrOnChange = AnyField()
+    subscribed = AnyField()
+
+    def __init__(self, report, rID, reportSubject, reportDataSource, reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+        self.report = report
+        self.rID = rID
+        self.reportSubject = reportSubject
+        self.reportDataSource = reportDataSource
+        self.reportType = reportType
+        self.reportItem = reportItem
+        self.readingType = readingType
+        self.marketContext = marketContext
+        self.oadrMinPeriod = oadrMinPeriod
+        self.oadrMaxPeriod = oadrMaxPeriod
+        self.oadrOnChange = oadrOnChange
+        self.subscribed = subscribed
+
 
 class ReportsToSend(MongoDB):
     """
