@@ -27,7 +27,7 @@ class MongoMeta(type):
 
     def __create_obj__(cls, remote):
         parameters = signature(cls.__init__).parameters
-        dummy_p = {p:v.default for p,v in parameters.items() if p != 'self'}
+        dummy_p = {p:v.default if not v.empty else None for p,v in parameters.items() if p != 'self'}
         obj = cls(**dummy_p)
         for attr in cls.__mongo_fields__:
             obj.__setattr__(attr, remote[attr] if attr in remote else None)

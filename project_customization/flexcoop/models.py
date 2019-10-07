@@ -114,32 +114,45 @@ class Device(MongoDB):
        An openadr Metadata_report device
     """
     __collectionname__ = 'devices'
-    report = AnyField()
+    # private fields
     rID = AnyField()
-    reportSubject = AnyField()
+    report = AnyField()
     reportDataSource = AnyField()
-    reportType = AnyField()
-    reportItem = AnyField()
-    readingType = AnyField()
-    marketContext = AnyField()
-    oadrMinPeriod = AnyField()
-    oadrMaxPeriod = AnyField()
-    oadrOnChange = AnyField()
-    subscribed = AnyField()
 
-    def __init__(self, report, rID, reportSubject, reportDataSource, reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+
+    # public fields
+    deviceID = AnyField()
+    reportSubject = AnyField() # Type
+    account = AnyField()
+    availability = AnyField()
+    status = AnyField()
+
+    #reportType = AnyField() # will go inside the status
+    #reportItem = AnyField() # will go inside the status
+    #readingType = AnyField() # will go inside the status
+    #marketContext = AnyField() # will go inside the status
+    #oadrMinPeriod = AnyField() # will go inside the status
+    #oadrMaxPeriod = AnyField() # will go inside the status
+    #oadrOnChange = AnyField() # will go inside the status
+    #subscribed = AnyField() # will go inside the status
+
+    def __init__(self, report, deviceID, rID, reportSubject, reportDataSource, status_item):
+
+
+        dev_test = Device.find_one({Device.deviceID(): deviceID})
+        if dev_test:
+            self._id = dev_test._id
+            self.status = dev_test.status
+            self.status.update(status_item)
+        else:
+            self.deviceID = deviceID
+            self.status = status_item
         self.report = report
         self.rID = rID
+        self.account = ""
+        self.availability = ""
         self.reportSubject = reportSubject
         self.reportDataSource = reportDataSource
-        self.reportType = reportType
-        self.reportItem = reportItem
-        self.readingType = readingType
-        self.marketContext = marketContext
-        self.oadrMinPeriod = oadrMinPeriod
-        self.oadrMaxPeriod = oadrMaxPeriod
-        self.oadrOnChange = oadrOnChange
-        self.subscribed = subscribed
 
 
 class ReportsToSend(MongoDB):
