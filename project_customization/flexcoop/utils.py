@@ -2,6 +2,17 @@ import re
 import uuid
 
 
+statusMapping = {
+    "status": "operationState",
+    "mode": "mode",
+    "temperature": "setPoint",
+    "fanspeed": "x-fanspeed",
+    "brigthness": "setPoint",
+    "colorTemperature": "x-color",
+    "color": "setPoint",
+    "switchBinary": "operationState"
+}
+
 def parse_rid(rid):
     """function that parses the information in the RID"""
     phisical_device, pdn, groupID, spaces, load, ln, metric = re.split("(?<!_)_(?!_)", rid)

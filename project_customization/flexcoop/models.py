@@ -17,7 +17,6 @@ class map_rid_deviceID(MongoDB):
     def get_or_create_deviceID(rID):
         phisical_device = get_id_from_rid(rID)
         maping = map_rid_deviceID.find_one({map_rid_deviceID.rID():phisical_device})
-        print(phisical_device)
         if maping:
             return maping.deviceID
         else:
@@ -104,10 +103,17 @@ class DataPoint(MongoDB):
        An openadr Metadata_report data_point
     """
     __collectionname__ = 'data_points'
+
+    deviceID = AnyField()
     report = AnyField()
     rID = AnyField()
     reportSubject = AnyField()
     reportDataSource = AnyField()
+    account = AnyField()
+    spaces = AnyField()
+    reportingItems = AnyField()
+
+
     reportType = AnyField()
     reportItem = AnyField()
     readingType = AnyField()
@@ -117,19 +123,26 @@ class DataPoint(MongoDB):
     oadrOnChange = AnyField()
     subscribed = AnyField()
 
-    def __init__(self, report, rID, reportSubject, reportDataSource, reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+    def __init__(self, deviceID, report, rID, reportSubject, reportDataSource, account, spaces, reportingItems): # reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+
+        dev_test = DataPoint.find_one({DataPoint.deviceID(): deviceID})
+        if dev_test:
+            self._id = dev_test._id
+            self.reportingItems = dev_test.reportingItems
+            self.reportingItems.update(reportingItems)
+        else:
+            self.deviceID = deviceID
+            self.reportingItems = reportingItems
         self.report = report
         self.rID = rID
         self.reportSubject = reportSubject
         self.reportDataSource = reportDataSource
-        self.reportType = reportType
-        self.reportItem = reportItem
-        self.readingType = readingType
-        self.marketContext = marketContext
-        self.oadrMinPeriod = oadrMinPeriod
-        self.oadrMaxPeriod = oadrMaxPeriod
-        self.oadrOnChange = oadrOnChange
-        self.subscribed = subscribed
+        self.account = account
+        self.spaces = spaces
+
+
+
+
 
 class Device(MongoDB):
     """
@@ -177,7 +190,6 @@ class Device(MongoDB):
         self.spaces = spaces
         self.reportSubject = reportSubject
         self.reportDataSource = reportDataSource
-
 
 class ReportsToSend(MongoDB):
     """

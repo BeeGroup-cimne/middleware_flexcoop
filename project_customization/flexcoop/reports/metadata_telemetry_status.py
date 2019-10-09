@@ -3,20 +3,8 @@ from datetime import datetime
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import MetadataReports, DataPoint, Device, map_rid_deviceID
-from project_customization.flexcoop.utils import parse_rid
+from project_customization.flexcoop.utils import parse_rid, statusMapping
 
-
-def elementMapping():
-    maping = {
-        "status": "operationState",
-        "mode": "mode",
-        "temperature": "setPoint",
-        "fanspeed": "x-fanspeed",
-        "brigthness": "setPoint",
-        "colorTemperature": "x-color",
-        "color": "setPoint",
-        "switchBinary": "operationState"
-    }
 
 class MetadataTelemetryStatusReport(OadrReport):
     report_name = "METADATA_TELEMETRY_STATUS"
@@ -57,7 +45,19 @@ class MetadataTelemetryStatusReport(OadrReport):
             onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange",
                                                                                            namespaces=NAMESPACES) is not None else None
             phisical_device, groupID, spaces, load, metric = parse_rid(rID)
-            status_item = {metric : None}
+            status_item = {
+                statusMapping[metric]: {
+                    "value": None,
+                    "report_type": reportType,
+                    "units": reportItem,
+                    "reading_type": readingType,
+                    "market_context": marketContext,
+                    "min_period": minSampling,
+                    "max_sampling": maxSampling,
+                    "on_change": onChange,
+                    "subscribed": False
+                }
+            }
             deviceID = map_rid_deviceID.get_or_create_deviceID(rID)
             device = Device(report._id, deviceID, load, spaces, reportSubject, reportDataSource, status_item)
             device.save()

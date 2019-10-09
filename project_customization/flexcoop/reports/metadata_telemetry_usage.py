@@ -3,7 +3,8 @@ from lxml import etree
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
-from project_customization.flexcoop.models import MetadataReports, DataPoint
+from project_customization.flexcoop.models import MetadataReports, DataPoint, map_rid_deviceID
+from project_customization.flexcoop.utils import parse_rid
 
 
 class MetadataTelemetryUsageReport(OadrReport):
@@ -45,7 +46,25 @@ class MetadataTelemetryUsageReport(OadrReport):
                 ".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
             onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange",
                                                                                             namespaces=NAMESPACES) is not None else None
-            data_point = DataPoint(report._id, rID, reportSubject, reportDataSource, reportType, reportItem, readingType, marketContext, minSampling, maxSampling, onChange)
+
+            phisical_device, groupID, spaces, load, metric = parse_rid(rID)
+            deviceID = map_rid_deviceID.get_or_create_deviceID(rID)
+
+            reporting_capabilities = {
+                metric: {
+                    "report_type": reportType,
+                    "units": reportItem,
+                    "reading_type": readingType,
+                    "market_context": marketContext,
+                    "min_period": minSampling,
+                    "max_sampling": maxSampling,
+                    "on_change": onChange,
+                    "subscribed": False
+                }
+
+            }
+            deviceID = map_rid_deviceID.get_or_create_deviceID(rID)
+            data_point = DataPoint(deviceID, report._id, rID, reportSubject, reportDataSource, "", spaces, reporting_capabilities)
             data_point.save()
 
     def create(self, *args, **kwargs):

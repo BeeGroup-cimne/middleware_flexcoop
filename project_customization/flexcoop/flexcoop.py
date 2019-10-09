@@ -6,6 +6,7 @@ from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from project_customization.flexcoop.models import VEN, MetadataReports, DataPoint, ReportsToSend
 from project_customization.flexcoop.reports.metadata_telemetry_status import MetadataTelemetryStatusReport
 from project_customization.flexcoop.reports.metadata_telemetry_usage import MetadataTelemetryUsageReport
+from project_customization.flexcoop.reports.telemetry_status import TelemetryStatusReport
 from project_customization.flexcoop.reports.telemetry_usage import TelemetryUsageReport
 
 
@@ -18,7 +19,8 @@ class FlexcoopCustomization():
     reports_to_subscribe = ["Ligth", "HVAC", "DHW"]
 
     available_reports = {
-        "TELEMETRY_USAGE": TelemetryUsageReport()
+        "TELEMETRY_USAGE": TelemetryUsageReport(),
+        "TELEMETRY_STATUS": TelemetryStatusReport()
     }
     metadata_available_reports = {
         "METADATA_TELEMETRY_USAGE": MetadataTelemetryUsageReport(),

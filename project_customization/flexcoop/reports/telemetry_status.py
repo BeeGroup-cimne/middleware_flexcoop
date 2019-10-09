@@ -1,20 +1,21 @@
 import re
 
 from mongo_orm import MongoDB, AnyField
+from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
-from project_customization.flexcoop.models import map_rid_deviceID
-from project_customization.flexcoop.utils import parse_rid
+from project_customization.flexcoop.models import map_rid_deviceID, Device
+from project_customization.flexcoop.utils import parse_rid, statusMapping
 
 
 def convert(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
-def get_report_models(self):
-    class TelemetryUsageReportModel(MongoDB):
-        "A telemetry report"
-        __collectionname__ = "telemetry_usage"
+def get_report_models():
+    class TelemetryStatusReportModel(MongoDB):
+        "A telemetry status report"
+        __collectionname__ = "telemetry_status"
         dtstart = AnyField()
         duration = AnyField()
         reportID = AnyField()
@@ -29,41 +30,41 @@ def get_report_models(self):
             self.reportID = reportID
             self.reportRequestID = reportRequestID
             self.specifierID = specifierID
-            self.reportName = TelemetryUsageReport.report_name
+            self.reportName = TelemetryStatusReport.report_name
             self.createdDateTime = createdDateTime
 
-    return TelemetryUsageReportModel
+    return TelemetryStatusReportModel
 
-def get_data_model(self, element):
-    class ReportDataModel(MongoDB):
-        "A telemetry usage report data"
-        __collectionname__ = convert(element)
-        report_id = AnyField()
-        dtstart = AnyField()
-        duration = AnyField()
-        uid = AnyField()
-        confidence = AnyField()
-        accuracy = AnyField()
-        dataQuality = AnyField()
-        value = AnyField()
-        deviceID = AnyField()
+# def get_status_model(self, element):
+#     class ReportDataModel(MongoDB):
+#         "A telemetry usage report data"
+#         __collectionname__ = convert(element)
+#         report_id = AnyField()
+#         dtstart = AnyField()
+#         duration = AnyField()
+#         uid = AnyField()
+#         confidence = AnyField()
+#         accuracy = AnyField()
+#         dataQuality = AnyField()
+#         value = AnyField()
+#         deviceID = AnyField()
+#
+#         def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
+#             self.deviceID = deviceID
+#             self.report_id = report_id
+#             self.dtstart = dtstart
+#             self.duration = duration
+#             self.uid = uid
+#             self.confidence = confidence
+#             self.accuracy = accuracy
+#             self.dataQuality = dataQuality
+#             self.value = value
+#
+#     return ReportDataModel
 
-        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
-            self.deviceID = deviceID
-            self.report_id = report_id
-            self.dtstart = dtstart
-            self.duration = duration
-            self.uid = uid
-            self.confidence = confidence
-            self.accuracy = accuracy
-            self.dataQuality = dataQuality
-            self.value = value
 
-    return ReportDataModel
-
-
-class TelemetryUsageReport(OadrReport):
-    report_name = "TELEMETRY_USAGE"
+class TelemetryStatusReport(OadrReport):
+    report_name = "TELEMETRY_STATUS"
 
     def create(self, reportRequestId, reportSpecifierID, created, reportID, dt_start, duration, intervals):
         """
@@ -92,7 +93,7 @@ class TelemetryUsageReport(OadrReport):
             ELEMENTS['ei'].reportRequestID(reportRequestId),
             ELEMENTS['ei'].reportSpecifierID(reportSpecifierID),
             ELEMENTS['ei'].createdDateTime(created),
-            ELEMENTS['ei'].reportName("TELEMETRY_USAGE"),
+            ELEMENTS['ei'].reportName("TELEMETRY_STATUS"),
         )
         if dt_start:
             dt = ELEMENTS['xcal']("date-time")
@@ -165,10 +166,12 @@ class TelemetryUsageReport(OadrReport):
         duration_p = duration.find(".//xcal:date-time", namespaces=NAMESPACES).text if duration.find(".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
         dt_start_p = dt_start.find(".//xcal:date-time", namespaces=NAMESPACES).text if dt_start.find(".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
         r = report(dt_start_p, duration_p, reportID_p, reportRequestID_p, specifierID, createdDateTime)
+        print("report_created")
         r.save()
         report_id = r._id
         intervals = oadrReport.find(".//strm:intervals", namespaces=NAMESPACES)
         for interval in intervals.findall(".//ei:interval", namespaces=NAMESPACES):
+            # We will only update the status to the Device endpoint
             dt_start = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
             duration = interval.find(".//xcal:duration", namespaces=NAMESPACES)
             uid = interval.find(".//xcal:uid", namespaces=NAMESPACES)
@@ -177,7 +180,7 @@ class TelemetryUsageReport(OadrReport):
             confidence = interval.find(".//ei:confidence", namespaces=NAMESPACES)
             accuracy = interval.find(".//ei:accuracy", namespaces=NAMESPACES)
             dataQuality = interval.find(".//ei:dataQuality", namespaces=NAMESPACES)
-            value_i = interval.find(".//ei:value", namespaces=NAMESPACES).text
+            value_i = interval.find(".//oadr:oadrCurrent", namespaces=NAMESPACES).text
 
             duration_i = duration.find(".//xcal:date-time", namespaces=NAMESPACES).text if duration.find(
                 ".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
@@ -191,8 +194,16 @@ class TelemetryUsageReport(OadrReport):
 
             phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
 
-            TMP = get_data_model(metric)
-            deviceID = map_rid_deviceID.get_or_create_deviceID(rid_i)
 
-            data = TMP(deviceID, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
-            data.save()
+
+            # TMP = get_data_model(metric)
+            deviceID = map_rid_deviceID.get_or_create_deviceID(rid_i)
+            device = Device.find_one({Device.deviceID():deviceID})
+            phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
+            update_values = {}
+            if device:
+                device.status[statusMapping[metric]].update({"value": value_i})
+            else:
+                raise InvalidReportException("The device {} does not exist".format(device))
+
+            device.save()
