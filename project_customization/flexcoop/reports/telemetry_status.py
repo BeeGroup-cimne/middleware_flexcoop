@@ -5,7 +5,7 @@ from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_deviceID, Device
-from project_customization.flexcoop.utils import parse_rid, statusMapping
+from project_customization.flexcoop.utils import parse_rid, statusMapping, get_id_from_rid
 
 
 def convert(name):
@@ -197,13 +197,17 @@ class TelemetryStatusReport(OadrReport):
 
 
             # TMP = get_data_model(metric)
-            deviceID = map_rid_deviceID.get_or_create_deviceID(rid_i)
-            device = Device.find_one({Device.deviceID():deviceID})
-            phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
-            update_values = {}
-            if device:
-                device.status[statusMapping[metric]].update({"value": value_i})
+            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rID(): get_id_from_rid(rid_i)})
+            if mapping:
+                device = Device.find_one({Device.deviceID(): mapping.deviceID})
+                phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
+                update_values = {}
+                if device:
+                    device.status[statusMapping[metric]].update({"value": value_i})
+                    device.save()
+                else:
+                    raise InvalidReportException("The device {} does not exist".format(rid_i))
             else:
-                raise InvalidReportException("The device {} does not exist".format(device))
+                raise InvalidReportException("The device {} does not exist".format(rid_i))
 
-            device.save()
+

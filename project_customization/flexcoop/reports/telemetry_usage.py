@@ -1,10 +1,11 @@
 import re
 
 from mongo_orm import MongoDB, AnyField
+from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_deviceID
-from project_customization.flexcoop.utils import parse_rid
+from project_customization.flexcoop.utils import parse_rid, get_id_from_rid
 
 
 def convert(name):
@@ -192,7 +193,9 @@ class TelemetryUsageReport(OadrReport):
             phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
 
             TMP = get_data_model(metric)
-            deviceID = map_rid_deviceID.get_or_create_deviceID(rid_i)
-
-            data = TMP(deviceID, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
-            data.save()
+            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rID(): get_id_from_rid(rid_i)})
+            if mapping:
+                data = TMP(mapping.deviceID, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
+                data.save()
+            else:
+                raise InvalidReportException("The device {} has not been registered".format(rid_i))
