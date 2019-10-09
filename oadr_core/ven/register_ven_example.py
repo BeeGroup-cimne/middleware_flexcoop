@@ -15,7 +15,7 @@ xmlparser = etree.XMLParser()
 schema_val_data = etree.parse(open("oadr_core/oadr_xml_schema/oadr_20b.xsd"), xmlparser)
 schema_val = etree.XMLSchema(schema_val_data)
 
-venID = "VEN.ID:1395090780716"
+venID = "2cebe96c-e9ad-11e9-bc8a-ac1f6b403fbc"
 registrationID = ""
 
 def register_ven(venID = None, registrationID= None):
@@ -44,7 +44,7 @@ def send_metadata_report(venID):
     #                              "market_context": "the market context"}]
     #             }]
     # content = oadrRegisterReport(requestID, requestID, venID, reports)
-    content = etree.parse("oadr_core/oadr_xml_example/ei_report_service/metadata_report.xml")
+    content = etree.parse("oadr_core/oadr_xml_example/new_example.xml", xmlparser)
     r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
     response = etree.fromstring(r.text)
     schema_val(response)

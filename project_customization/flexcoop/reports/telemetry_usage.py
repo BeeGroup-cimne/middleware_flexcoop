@@ -4,12 +4,6 @@ from mongo_orm import MongoDB, AnyField
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 
-
-def parse_rid(rid):
-    phisical_device, pdn, prosumer, spaces, load, ln, metric = re.split("(?<!_)_(?!_)", rid)
-    spaces = spaces.split("__")
-    return "{}_{}".format(phisical_device, pdn), prosumer, spaces, "{}_{}".format(load, ln), metric
-
 class TelemetryUsageReport(OadrReport):
     report_name = "TELEMETRY_USAGE"
 

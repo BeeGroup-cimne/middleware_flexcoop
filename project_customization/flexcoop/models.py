@@ -4,7 +4,32 @@ from mongo_orm import MongoDB, AnyField
 from datetime import datetime
 
 #Cache of OADR POLL messages. It is done in memory but if too many messages are in the queue it can be moved to the DB
+from project_customization.flexcoop.utils import generate_UUID, parse_rid, get_id_from_rid
+
 oadrPollQueue = {}
+
+class map_rid_deviceID(MongoDB):
+    __collectionname__ = "map_id"
+    deviceID = AnyField()
+    rID = AnyField()
+
+    @staticmethod
+    def get_or_create_deviceID(rID):
+        phisical_device = get_id_from_rid(rID)
+        maping = map_rid_deviceID.find_one({map_rid_deviceID.rID():phisical_device})
+        print(phisical_device)
+        if maping:
+            return maping.deviceID
+        else:
+            deviceID = generate_UUID()
+            maping = map_rid_deviceID(phisical_device, deviceID)
+            maping.save()
+            return deviceID
+
+    def __init__(self, rID, deviceID):
+        self.rID = rID
+        self.deviceID = deviceID
+
 
 class VEN(MongoDB):
     """
@@ -26,7 +51,7 @@ class VEN(MongoDB):
         if venID:
             self.venID = venID
         else:
-            self.venID = self.generate_ven_ID()
+            self.venID = generate_UUID()
         if registrationID:
             self.registrationID = registrationID
         self.oadrProfileName = oadrProfileName
@@ -37,14 +62,11 @@ class VEN(MongoDB):
         self.oadrVenName = oadrVenName
         self.oadrHttpPullModel = oadrHttpPullModel
 
-    def generate_ven_ID(self):
-        return str(uuid.uuid1())
-
     def remove_reports(self):
         ven_reports = MetadataReports.find({MetadataReports.ven(): self._id})
         for report in ven_reports:
             points = DataPoint.find({DataPoint.report(): report._id})
-            devices = Device.find({Device.report():reoirt._id})
+            devices = Device.find({Device.report():report._id})
             for p in points:
                 p.delete()
             for d in devices:
@@ -126,6 +148,7 @@ class Device(MongoDB):
     account = AnyField()
     availability = AnyField()
     status = AnyField()
+    spaces = AnyField()
 
     #reportType = AnyField() # will go inside the status
     #reportItem = AnyField() # will go inside the status
@@ -136,7 +159,7 @@ class Device(MongoDB):
     #oadrOnChange = AnyField() # will go inside the status
     #subscribed = AnyField() # will go inside the status
 
-    def __init__(self, report, deviceID, rID, reportSubject, reportDataSource, status_item):
+    def __init__(self, report, deviceID, rID, spaces, reportSubject, reportDataSource, status_item):
 
 
         dev_test = Device.find_one({Device.deviceID(): deviceID})
@@ -151,6 +174,7 @@ class Device(MongoDB):
         self.rID = rID
         self.account = ""
         self.availability = ""
+        self.spaces = spaces
         self.reportSubject = reportSubject
         self.reportDataSource = reportDataSource
 
