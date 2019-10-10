@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from oadr_core.vtn.server_blueprint import send_message
-from project_customization.flexcoop.models import VEN, MetadataReports, oadrPollQueue, DataPoint, Event, EventSignal, EventInterval
+from project_customization.flexcoop.models import VEN, MetadataReports, oadrPollQueue, DataPoint, Event, EventSignal, \
+    EventInterval, Device
 from oadr_core.vtn.services.ei_register_party_service import OadrCancelPartyRegistration, OadrRequestReregistration
 from oadr_core.vtn.services.ei_report_service import OadrCreateReport, OadrCancelReport
 from oadr_core.vtn.web_forms import EventForm, EventSignalForm
@@ -46,67 +47,69 @@ def view_ven_reregister(venID):
 def view_ven_reports(venID):
     ven = VEN.find_one({VEN.ven_id(): venID})
     reports = MetadataReports.find({MetadataReports.ven(): ven._id})
-    report_data_points={}
+    report_data_points = {}
+    report_devices = {}
     for report in reports:
         report_data_points[report] = DataPoint.find({DataPoint.report(): report._id})
+        report_devices['report'] = Device.find({Device.report(): report._id})
 
-    if request.method == "POST":
-        register_reports = []
-        cancel_reports = []
-        for report, data_points in report_data_points.items():
-            register_data_points = []
-            non_registered_data_points = []
-            change = False
-            for data_point in data_points:
-                subscription = True if request.form.get("r{}-{}".format(report.eiReportID, data_point.rID)) else False
-                if subscription:
-                    if data_point.subscribed != True:
-                        change=True
-                    register_data_points.append(data_point)
-                else:
-                    if data_point.subscribed != False:
-                        change=True
-                    non_registered_data_points.append(data_point)
-                data_point.subscribed=subscription
-                data_point.save()
-
-            if change and register_data_points:
-                report.subscribed = True
-                register_reports.append((report, register_data_points))
-            elif change:
-                cancel_reports.append(report)
-                report.subscribed = False
-            report.save()
-        if register_reports:
-            createReport = OadrCreateReport()
-            report_types = [{"reportId":x.eiReportID,
-                             "specifierId": x.specifierID,
-                             "data_points":[
-                                 {
-                                     'rid': d.rID,
-                                     'reading_type': d.readingType
-                                 } for d in y]
-                            } for x, y in register_reports]
-            params = {
-                "requestID": "0",
-                "report_types": report_types
-            }
-            response = send_message(createReport, ven, params)
-            #TODO do something with the response if required by the protocol. When oadrPoll response will be None
-        if cancel_reports:
-            cancelReport = OadrCancelReport()
-            params = {
-                "requestID": "0",
-                "cancelReport": [x.eiReportID for x in cancel_reports],
-                "followUp": False,
-            }
-            response = send_message(cancelReport, ven, params)
-            #TODO do something with the response if required by the protocol. When oadrPoll response will be None
-    return render_template("web/ven/ven_reports.html", ven=ven, report_data_points=report_data_points)
+    # if request.method == "POST":
+    #     register_reports = []
+    #     cancel_reports = []
+    #     for report, data_points in report_data_points.items():
+    #         register_data_points = []
+    #         non_registered_data_points = []
+    #         change = False
+    #         for data_point in data_points:
+    #             subscription = True if request.form.get("r{}-{}".format(report.eiReportID, data_point.rID)) else False
+    #             if subscription:
+    #                 if data_point.subscribed != True:
+    #                     change=True
+    #                 register_data_points.append(data_point)
+    #             else:
+    #                 if data_point.subscribed != False:
+    #                     change=True
+    #                 non_registered_data_points.append(data_point)
+    #             data_point.subscribed=subscription
+    #             data_point.save()
+    #
+    #         if change and register_data_points:
+    #             report.subscribed = True
+    #             register_reports.append((report, register_data_points))
+    #         elif change:
+    #             cancel_reports.append(report)
+    #             report.subscribed = False
+    #         report.save()
+    #     if register_reports:
+    #         createReport = OadrCreateReport()
+    #         report_types = [{"reportId":x.eiReportID,
+    #                          "specifierId": x.specifierID,
+    #                          "data_points":[
+    #                              {
+    #                                  'rid': d.rID,
+    #                                  'reading_type': d.readingType
+    #                              } for d in y]
+    #                         } for x, y in register_reports]
+    #         params = {
+    #             "requestID": "0",
+    #             "report_types": report_types
+    #         }
+    #         response = send_message(createReport, ven, params)
+    #         #TODO do something with the response if required by the protocol. When oadrPoll response will be None
+    #     if cancel_reports:
+    #         cancelReport = OadrCancelReport()
+    #         params = {
+    #             "requestID": "0",
+    #             "cancelReport": [x.eiReportID for x in cancel_reports],
+    #             "followUp": False,
+    #         }
+    #         response = send_message(cancelReport, ven, params)
+    #         #TODO do something with the response if required by the protocol. When oadrPoll response will be None
+    return render_template("web/ven/ven_reports.html", ven=ven, report_data_points=report_data_points, report_devices=report_devices)
 
 @web.route("/vtn_reports/",  methods=['GET'])
 def view_vtn_reports():
-    reports = MetadataReportSpec.find({MetadataReportSpec.owned():True})
+    reports = MetadataReports.find({MetadataReports.owned():True})
     return render_template("web/vtn_reports/vtn_reports.html", reports=reports)
 
 @web.route("/vtn_create_reports/",  methods=['GET', 'POST'])

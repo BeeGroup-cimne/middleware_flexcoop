@@ -14,20 +14,20 @@ class map_rid_deviceID(MongoDB):
     rid = AnyField()
 
     @staticmethod
-    def get_or_create_deviceID(rID):
-        phisical_device = get_id_from_rid(rID)
+    def get_or_create_deviceID(rid):
+        phisical_device = get_id_from_rid(rid)
         maping = map_rid_deviceID.find_one({map_rid_deviceID.rid():phisical_device})
         if maping:
-            return maping.deviceID
+            return maping.device_id
         else:
-            deviceID = generate_UUID()
-            maping = map_rid_deviceID(phisical_device, deviceID)
+            device_id = generate_UUID()
+            maping = map_rid_deviceID(phisical_device, device_id)
             maping.save()
-            return deviceID
+            return device_id
 
-    def __init__(self, rID, deviceID):
-        self.rid = rID
-        self.device_id = deviceID
+    def __init__(self, rid, device_id):
+        self.rid = rid
+        self.device_id = device_id
 
 
 class VEN(MongoDB):

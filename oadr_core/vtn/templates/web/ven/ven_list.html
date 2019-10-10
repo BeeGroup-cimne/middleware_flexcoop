@@ -17,12 +17,12 @@
         <tbody>
             {% for ven in ven_list %}
             <tr>
-                <th scope="row">{{ ven.venID }}</th>
-                <td> {{ ven.oadrVenName }}</td>
-                <td><a href="{{ url_for('visual.view_ven_reports', venID=ven.venID) }}""/web/ven_reports/{{ ven.venID }}"><i class="fas fa-address-card"></i></a></td>
-                <td><a href="{{ url_for('visual.view_ven_info', venID=ven.venID) }}"/web/ven/{{ ven.venID }}"><i class="fas fa-info"></i></a></td>
-                <td><a href="{{ url_for('visual.view_ven_reregister', venID=ven.venID) }}"/web/ven/{{ ven.venID }}/reregister"><i class="fas fa-sync-alt"></i></a></td>
-                <td><a href="{{ url_for('visual.view_ven_delete', venID=ven.venID) }}"/web/ven/{{ ven.venID }}/delete"><i class="fas fa-trash"></i></a></td>
+                <th scope="row">{{ ven.ven_id }}</th>
+                <td> {{ ven.oadr_ven_name }}</td>
+                <td><a href="{{ url_for('visual.view_ven_reports', venID=ven.ven_id) }}""/web/ven_reports/{{ ven.ven_id }}"><i class="fas fa-address-card"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_info', venID=ven.ven_id) }}"/web/ven/{{ ven.ven_id }}"><i class="fas fa-info"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_reregister', venID=ven.ven_id) }}"/web/ven/{{ ven.ven_id }}/reregister"><i class="fas fa-sync-alt"></i></a></td>
+                <td><a href="{{ url_for('visual.view_ven_delete', venID=ven.ven_id) }}"/web/ven/{{ ven.ven_id }}/delete"><i class="fas fa-trash"></i></a></td>
             </tr>
             {% endfor %}
         </tbody>
