@@ -8,7 +8,7 @@ from project_customization.flexcoop.utils import generate_UUID, parse_rid, get_i
 
 oadrPollQueue = {}
 
-class map_rid_deviceID(MongoDB):
+class map_rid_device_id(MongoDB):
     __collectionname__ = "map_id"
     device_id = AnyField()
     rid = AnyField()
@@ -16,12 +16,12 @@ class map_rid_deviceID(MongoDB):
     @staticmethod
     def get_or_create_deviceID(rid):
         phisical_device = get_id_from_rid(rid)
-        maping = map_rid_deviceID.find_one({map_rid_deviceID.rid():phisical_device})
+        maping = map_rid_device_id.find_one({map_rid_device_id.rid():phisical_device})
         if maping:
             return maping.device_id
         else:
             device_id = generate_UUID()
-            maping = map_rid_deviceID(phisical_device, device_id)
+            maping = map_rid_device_id(phisical_device, device_id)
             maping.save()
             return device_id
 

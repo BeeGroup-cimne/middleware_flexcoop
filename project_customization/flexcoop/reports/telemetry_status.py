@@ -4,7 +4,7 @@ from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
-from project_customization.flexcoop.models import map_rid_deviceID, Device
+from project_customization.flexcoop.models import map_rid_device_id, Device
 from project_customization.flexcoop.utils import parse_rid, statusMapping, get_id_from_rid
 
 
@@ -165,9 +165,9 @@ class TelemetryStatusReport(OadrReport):
 
 
             # TMP = get_data_model(metric)
-            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rid(): get_id_from_rid(rid_i)})
+            mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
-                device = Device.find_one({Device.device_id(): mapping.deviceID})
+                device = Device.find_one({Device.device_id(): mapping.device_id})
                 phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
                 update_values = {}
                 if device:

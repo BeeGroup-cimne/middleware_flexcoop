@@ -4,11 +4,11 @@ from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
-from project_customization.flexcoop.models import map_rid_deviceID
+from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case
 
 
-def get_report_models(self):
+def get_report_models():
     class TelemetryUsageReportModel(MongoDB):
         "A telemetry report"
         __collectionname__ = "telemetry_usage"
@@ -31,7 +31,7 @@ def get_report_models(self):
 
     return TelemetryUsageReportModel
 
-def get_data_model(self, element):
+def get_data_model(element):
     class ReportDataModel(MongoDB):
         "A telemetry usage report data"
         __collectionname__ = element
@@ -153,45 +153,45 @@ class TelemetryUsageReport(OadrReport):
 
     def parse(self, oadrReport):
         report = get_report_models()
-        dt_start = oadrReport.find(".//xcal:dtstart", namespaces=NAMESPACES)
+        dtstart = oadrReport.find(".//xcal:dtstart", namespaces=NAMESPACES)
         duration = oadrReport.find(".//xcal:duration", namespaces=NAMESPACES)
-        reportID_p = oadrReport.find(".//ei:eiReportID", namespaces=NAMESPACES).text
-        reportRequestID_p = oadrReport.find(".//ei:reportRequestID", namespaces=NAMESPACES).text
-        specifierID = oadrReport.find(".//ei:reportSpecifierID", namespaces=NAMESPACES).text
-        createdDateTime = oadrReport.find(".//ei:createdDateTime", namespaces=NAMESPACES).text
+        report_id_p = oadrReport.find(".//ei:eiReportID", namespaces=NAMESPACES).text
+        report_request_id_p = oadrReport.find(".//ei:reportRequestID", namespaces=NAMESPACES).text
+        specifier_id = oadrReport.find(".//ei:reportSpecifierID", namespaces=NAMESPACES).text
+        created_date_time = oadrReport.find(".//ei:createdDateTime", namespaces=NAMESPACES).text
         duration_p = duration.find(".//xcal:date-time", namespaces=NAMESPACES).text if duration.find(".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
-        dt_start_p = dt_start.find(".//xcal:date-time", namespaces=NAMESPACES).text if dt_start.find(".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
-        r = report(dt_start_p, duration_p, reportID_p, reportRequestID_p, specifierID, createdDateTime)
+        dtstart_p = dtstart.find(".//xcal:date-time", namespaces=NAMESPACES).text if dtstart.find(".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
+        r = report(dtstart_p, duration_p, report_id_p, report_request_id_p, specifier_id, created_date_time)
         r.save()
         report_id = r._id
         intervals = oadrReport.find(".//strm:intervals", namespaces=NAMESPACES)
         for interval in intervals.findall(".//ei:interval", namespaces=NAMESPACES):
-            dt_start = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
+            dtstart = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
             duration = interval.find(".//xcal:duration", namespaces=NAMESPACES)
             uid = interval.find(".//xcal:uid", namespaces=NAMESPACES)
             rid_i = interval.find(".//ei:rID", namespaces=NAMESPACES).text
 
             confidence = interval.find(".//ei:confidence", namespaces=NAMESPACES)
             accuracy = interval.find(".//ei:accuracy", namespaces=NAMESPACES)
-            dataQuality = interval.find(".//ei:dataQuality", namespaces=NAMESPACES)
+            data_quality = interval.find(".//ei:dataQuality", namespaces=NAMESPACES)
             value_i = interval.find(".//ei:value", namespaces=NAMESPACES).text
 
             duration_i = duration.find(".//xcal:date-time", namespaces=NAMESPACES).text if duration.find(
                 ".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
-            dt_start_i = dt_start.find(".//xcal:date-time", namespaces=NAMESPACES).text if dt_start.find(
+            dtstart_i = dtstart.find(".//xcal:date-time", namespaces=NAMESPACES).text if dtstart.find(
                 ".//xcal:date-time", namespaces=NAMESPACES) is not None else ""
-            uid_i = uid.find(".//xcal:text", namespaces=NAMESPACES).text if dt_start.find(
+            uid_i = uid.find(".//xcal:text", namespaces=NAMESPACES).text if dtstart.find(
                 ".//xcal:text", namespaces=NAMESPACES) is not None else ""
             confidence_i = confidence.text if confidence is not None else ""
             accuracy_i = accuracy.text if accuracy is not None else ""
-            dataQuality_i = dataQuality.text if dataQuality is not None else ""
+            data_quality_i = data_quality.text if data_quality is not None else ""
 
             phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
 
             TMP = get_data_model(convert_snake_case(metric))
-            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rid(): get_id_from_rid(rid_i)})
+            mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
-                data = TMP(mapping.deviceID, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i, dataQuality_i, value_i)
+                data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i)
                 data.save()
             else:
                 raise InvalidReportException("The device {} has not been registered".format(rid_i))

@@ -15,7 +15,7 @@ xmlparser = etree.XMLParser()
 schema_val_data = etree.parse(open("oadr_core/oadr_xml_schema/oadr_20b.xsd"), xmlparser)
 schema_val = etree.XMLSchema(schema_val_data)
 
-venID = "511dc82a-ea7d-11e9-a8e9-ac1f6b403fbc"
+venID = "b491f546-eb3d-11e9-a1b7-ac1f6b403fbc"
 registrationID = ""
 
 def register_ven(venID = None, registrationID= None):
@@ -50,7 +50,7 @@ def send_metadata_report(venID):
     schema_val(response)
     pretty_print_xml(response)
 
-def send_test_report(venID):
+def send_test_report_status(venID):
     # requestID = "0"  # nobody requested this report
     # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
     #             "duration": "P3Y6M4DT12H30M5S",
@@ -67,11 +67,29 @@ def send_test_report(venID):
     schema_val(response)
     pretty_print_xml(response)
 
+def send_test_report_usage(venID):
+    # requestID = "0"  # nobody requested this report
+    # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
+    #             "duration": "P3Y6M4DT12H30M5S",
+    #             "reportRequestID": "0", "createdDateTime": datetime.utcnow().isoformat(),
+    #             "data_points": [{"rID": "m3", "reportType": "usage", "readingType": "Direct Read",
+    #                              "oadrMinPeriod": "P3Y6M4DT12H30M5S",
+    #                              "oadrMaxPeriod": "P3Y6M4DT12H30M5S", "oadrOnChange": False,
+    #                              "market_context": "the market context"}]
+    #             }]
+    # content = oadrRegisterReport(requestID, requestID, venID, reports)
+    content = etree.parse("oadr_core/oadr_xml_example/ei_report_service/test.xml", xmlparser)
+    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
+    response = etree.fromstring(r.text)
+    schema_val(response)
+    pretty_print_xml(response)
+
 
 venID, registrationID = register_ven(venID, venID)
 
 send_metadata_report(venID)
-send_test_report(venID)
+send_test_report_status(venID)
+send_test_report_usage(venID)
 
 
 #     content = oadrPoll(venID)
