@@ -4,7 +4,7 @@ from lxml import etree
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import MetadataReports, DataPoint, map_rid_deviceID
-from project_customization.flexcoop.utils import parse_rid
+from project_customization.flexcoop.utils import parse_rid, convert_snake_case
 
 
 class MetadataTelemetryUsageReport(OadrReport):
@@ -51,7 +51,7 @@ class MetadataTelemetryUsageReport(OadrReport):
             deviceID = map_rid_deviceID.get_or_create_deviceID(rID)
 
             reporting_capabilities = {
-                metric: {
+                convert_snake_case(metric): {
                     "report_type": reportType,
                     "units": reportItem,
                     "reading_type": readingType,
@@ -64,7 +64,7 @@ class MetadataTelemetryUsageReport(OadrReport):
 
             }
             deviceID = map_rid_deviceID.get_or_create_deviceID(rID)
-            data_point = DataPoint(deviceID, report._id, rID, reportSubject, reportDataSource, "", spaces, reporting_capabilities)
+            data_point = DataPoint(deviceID, report._id, load, reportSubject, reportDataSource, "", spaces, reporting_capabilities)
             data_point.save()
 
     def create(self, *args, **kwargs):

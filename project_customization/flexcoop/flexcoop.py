@@ -34,33 +34,33 @@ class FlexcoopCustomization():
         # Check for correct ven and registrationID
         if not registrationID:
             if venID:
-                ven = VEN.find_one({VEN.venID(): venID})
+                ven = VEN.find_one({VEN.ven_id(): venID})
                 if ven:
                     raise InvalidVenException()
 
             ven = VEN(venID, registrationID, oadrProfileName, oadrTransportName, oadrTransportAddress,
                       oadrReportOnly, oadrXmlSignature, oadrVenName, oadrHttpPullModel)
-            ven.registrationID = str(ven.venID)
+            ven.registration_id = str(ven.ven_id)
         else:
-            ven = VEN.find_one({VEN.registrationID():registrationID})
+            ven = VEN.find_one({VEN.registration_id():registrationID})
             if not ven or str(ven.venID) != venID:
                 raise InvalidVenException()
 
         # save info of new ven
-        ven.oadrProfileName = oadrProfileName
-        ven.oadrTransportName = oadrTransportName
-        ven.oadrTransportAddress = oadrTransportAddress
-        ven.oadrReportOnly = oadrReportOnly
-        ven.oadrXmlSignature = oadrXmlSignature
-        ven.oadrVenName = oadrVenName
-        ven.oadrHttpPullModel = oadrHttpPullModel
+        ven.oadr_profile_name = oadrProfileName
+        ven.oadr_transport_name = oadrTransportName
+        ven.oadr_transport_address = oadrTransportAddress
+        ven.oadr_report_only = oadrReportOnly
+        ven.oadr_xml_signature = oadrXmlSignature
+        ven.oadr_ven_name = oadrVenName
+        ven.oadr_http_pull_model = oadrHttpPullModel
         ven.save()
 
-        return "200", "OK", ven.registrationID, ven.venID
+        return "200", "OK", ven.registration_id, ven.ven_id
 
     def on_OadrCancelPartyRegistration_recieved(self, requestID, registrationID, venID):
 
-        ven = VEN.find_one({VEN.registrationID(): registrationID})
+        ven = VEN.find_one({VEN.registration_id(): registrationID})
         if str(ven.venID) != venID:
             raise InvalidVenException()
         ven.remove_reports()
@@ -68,7 +68,7 @@ class FlexcoopCustomization():
         return "200", "OK"
 
     def on_OadrCancelPartyRegistration_send(self, registrationID, requestID, venID):
-        ven = VEN.find_one({VEN.registrationID(): registrationID})
+        ven = VEN.find_one({VEN.registration_id(): registrationID})
         ven.remove_reports()
         ven.delete()
 
@@ -105,10 +105,10 @@ class FlexcoopCustomization():
         for dp in r_request.findall(".//ei:specifierPayload", namespaces=NAMESPACES):
             rID = dp.find(".//ei:rID", namespaces=NAMESPACES).text
             readingType = dp.find(".//ei:readingType", namespaces=NAMESPACES)
-            db_dp = DataPoint.find_one({DataPoint.rID(): rID, DataPoint.readingType(): readingType})
+            db_dp = DataPoint.find_one({DataPoint.rid(): rID, DataPoint.reading_type(): readingType})
             relatedDataPoints.append(db_dp._id)
         report = MetadataReports.find_one(
-            {MetadataReports.owned(): True, MetadataReports.specifierID(): reportSpecifierID})
+            {MetadataReports.owned(): True, MetadataReports.specifier_id(): reportSpecifierID})
         report_subscription = ReportsToSend(report._id, reportRequestID, granularity, reportBackDuration,
                                             relatedDataPoints)
         report_subscription.save()
@@ -119,7 +119,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrRegisterReport_recieved(self, requestID, venID, reports_payloads):
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
 
 
         if ven is None:
@@ -161,7 +161,7 @@ class FlexcoopCustomization():
 
     def on_OadrRegisterReport_response(self, response_code, response_description, venID, oadrReportRequest):
 
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
         if not ven:
             raise InvalidVenException
 
@@ -179,7 +179,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrCreateReport_recieved(self, venID, reportRequests):
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
         # respond
         if ven is None:
             raise InvalidVenException
@@ -198,21 +198,21 @@ class FlexcoopCustomization():
         pass
 
     def on_OadrCreateReport_response(self, venID, pending_reports):
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
         # respond
         if ven is None:
             raise InvalidVenException
         return self.created_report(pending_reports)
 
     def on_OadrCreatedReport_recieved(self, venID, pending_reports):
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
         # respond
         if ven is None:
             raise InvalidVenException
         return self.created_report(pending_reports)
 
     def on_OadrCreatedReport_send(self, venID):
-        ven = VEN.find_one({VEN.venID:venID})
+        ven = VEN.find_one({VEN.ven_id:venID})
         if ven is None:
             raise InvalidVenException
         pending_reports = []
@@ -227,7 +227,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrUpdateReport_recieved(self, venID, reports):
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
 
         if ven is None:
             raise InvalidVenException
@@ -271,13 +271,13 @@ class FlexcoopCustomization():
 
     def on_OadrCancelReport_recieved(self, venID, cancel_reports, report_to_follow):
         # respond
-        ven = VEN.find_one({VEN.venID(): venID})
+        ven = VEN.find_one({VEN.ven_id(): venID})
         if ven is None:
             raise InvalidVenException
 
         for i in range(0,len(cancel_reports)):
             report_request = cancel_reports[i]
-            report = ReportsToSend.find_one({ReportsToSend.reportRequestID: report_request})
+            report = ReportsToSend.find_one({ReportsToSend.report_request_id: report_request})
             if report_to_follow[i]:
                 report.canceled = True
                 report.save()

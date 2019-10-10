@@ -8,60 +8,28 @@ from project_customization.flexcoop.models import map_rid_deviceID, Device
 from project_customization.flexcoop.utils import parse_rid, statusMapping, get_id_from_rid
 
 
-def convert(name):
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
 def get_report_models():
     class TelemetryStatusReportModel(MongoDB):
         "A telemetry status report"
         __collectionname__ = "telemetry_status"
         dtstart = AnyField()
         duration = AnyField()
-        reportID = AnyField()
-        reportRequestID = AnyField()
-        specifierID = AnyField()
-        reportName = AnyField()
-        createdDateTime = AnyField()
+        report_id = AnyField()
+        report_request_id = AnyField()
+        specifier_id = AnyField()
+        report_name = AnyField()
+        created_date_time = AnyField()
 
         def __init__(self, dt_start, duration, reportID, reportRequestID, specifierID, createdDateTime):
             self.dtstart = dt_start
             self.duration = duration
-            self.reportID = reportID
-            self.reportRequestID = reportRequestID
-            self.specifierID = specifierID
-            self.reportName = TelemetryStatusReport.report_name
-            self.createdDateTime = createdDateTime
+            self.report_id = reportID
+            self.report_request_id = reportRequestID
+            self.specifier_id = specifierID
+            self.report_name = TelemetryStatusReport.report_name
+            self.created_date_time = createdDateTime
 
     return TelemetryStatusReportModel
-
-# def get_status_model(self, element):
-#     class ReportDataModel(MongoDB):
-#         "A telemetry usage report data"
-#         __collectionname__ = convert(element)
-#         report_id = AnyField()
-#         dtstart = AnyField()
-#         duration = AnyField()
-#         uid = AnyField()
-#         confidence = AnyField()
-#         accuracy = AnyField()
-#         dataQuality = AnyField()
-#         value = AnyField()
-#         deviceID = AnyField()
-#
-#         def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
-#             self.deviceID = deviceID
-#             self.report_id = report_id
-#             self.dtstart = dtstart
-#             self.duration = duration
-#             self.uid = uid
-#             self.confidence = confidence
-#             self.accuracy = accuracy
-#             self.dataQuality = dataQuality
-#             self.value = value
-#
-#     return ReportDataModel
-
 
 class TelemetryStatusReport(OadrReport):
     report_name = "TELEMETRY_STATUS"
@@ -197,9 +165,9 @@ class TelemetryStatusReport(OadrReport):
 
 
             # TMP = get_data_model(metric)
-            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rID(): get_id_from_rid(rid_i)})
+            mapping = map_rid_deviceID.find_one({map_rid_deviceID.rid(): get_id_from_rid(rid_i)})
             if mapping:
-                device = Device.find_one({Device.deviceID(): mapping.deviceID})
+                device = Device.find_one({Device.device_id(): mapping.deviceID})
                 phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
                 update_values = {}
                 if device:

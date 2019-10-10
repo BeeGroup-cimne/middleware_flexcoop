@@ -10,13 +10,13 @@ oadrPollQueue = {}
 
 class map_rid_deviceID(MongoDB):
     __collectionname__ = "map_id"
-    deviceID = AnyField()
-    rID = AnyField()
+    device_id = AnyField()
+    rid = AnyField()
 
     @staticmethod
     def get_or_create_deviceID(rID):
         phisical_device = get_id_from_rid(rID)
-        maping = map_rid_deviceID.find_one({map_rid_deviceID.rID():phisical_device})
+        maping = map_rid_deviceID.find_one({map_rid_deviceID.rid():phisical_device})
         if maping:
             return maping.deviceID
         else:
@@ -26,8 +26,8 @@ class map_rid_deviceID(MongoDB):
             return deviceID
 
     def __init__(self, rID, deviceID):
-        self.rID = rID
-        self.deviceID = deviceID
+        self.rid = rID
+        self.device_id = deviceID
 
 
 class VEN(MongoDB):
@@ -35,31 +35,31 @@ class VEN(MongoDB):
     An openadr VEN
     """
     __collectionname__ = 'virtual_end_node'
-    venID = AnyField()
-    registrationID = AnyField()
-    oadrProfileName = AnyField()
-    oadrTransportName = AnyField()
-    oadrTransportAddress = AnyField()
-    oadrReportOnly = AnyField()
-    oadrXmlSignature = AnyField()
-    oadrVenName = AnyField()
-    oadrHttpPullModel = AnyField()
+    ven_id = AnyField()
+    registration_id = AnyField()
+    oadr_profile_name = AnyField()
+    oadr_transport_name = AnyField()
+    oadr_transport_address = AnyField()
+    oadr_report_only = AnyField()
+    oadr_xml_signature = AnyField()
+    oadr_ven_name = AnyField()
+    oadr_http_pull_model = AnyField()
 
     def __init__(self, venID, registrationID, oadrProfileName, oadrTransportName, oadrTransportAddress,
                  oadrReportOnly, oadrXmlSignature, oadrVenName, oadrHttpPullModel):
         if venID:
-            self.venID = venID
+            self.ven_id = venID
         else:
-            self.venID = generate_UUID()
+            self.ven_id = generate_UUID()
         if registrationID:
-            self.registrationID = registrationID
-        self.oadrProfileName = oadrProfileName
-        self.oadrTransportName = oadrTransportName
-        self.oadrTransportAddress = oadrTransportAddress
-        self.oadrReportOnly = oadrReportOnly
-        self.oadrXmlSignature = oadrXmlSignature
-        self.oadrVenName = oadrVenName
-        self.oadrHttpPullModel = oadrHttpPullModel
+            self.registration_id = registrationID
+        self.oadr_profile_name = oadrProfileName
+        self.oadr_transport_name = oadrTransportName
+        self.oadr_transport_address = oadrTransportAddress
+        self.oadr_report_only = oadrReportOnly
+        self.oadr_xml_signature = oadrXmlSignature
+        self.oadr_ven_name = oadrVenName
+        self.oadr_http_pull_model = oadrHttpPullModel
 
     def remove_reports(self):
         ven_reports = MetadataReports.find({MetadataReports.ven(): self._id})
@@ -73,7 +73,7 @@ class VEN(MongoDB):
             report.delete()
 
     def __repr__(self):
-        return '<VEN {}>'.format(self.oadrVenName)
+        return '<VEN {}>'.format(self.oadr_ven_name)
 
 
 class MetadataReports(MongoDB):
@@ -82,19 +82,19 @@ class MetadataReports(MongoDB):
     """
     __collectionname__ = 'metadata_reports'
     ven = AnyField()
-    eiReportID = AnyField()
-    specifierID = AnyField()
+    ei_report_id = AnyField()
+    specifier_id = AnyField()
     duration = AnyField()
-    reportName = AnyField()
-    createdDateTime = AnyField()
+    report_name = AnyField()
+    created_date_time = AnyField()
     subscribed = AnyField()
     def __init__(self, ven, eiReportID, specifierID, duration, reportName, createdDateTime=datetime.utcnow(), subscribed=False):
         self.ven = ven
-        self.eiReportID = eiReportID
-        self.specifierID = specifierID
+        self.ei_report_id = eiReportID
+        self.specifier_id = specifierID
         self.duration = duration
-        self.reportName = reportName
-        self.createdDateTime = createdDateTime
+        self.report_name = reportName
+        self.created_date_time = createdDateTime
         self.subscribed = subscribed
 
 
@@ -104,39 +104,39 @@ class DataPoint(MongoDB):
     """
     __collectionname__ = 'data_points'
 
-    deviceID = AnyField()
+    device_id = AnyField()
     report = AnyField()
-    rID = AnyField()
-    reportSubject = AnyField()
-    reportDataSource = AnyField()
+    rid = AnyField()
+    report_subject = AnyField()
+    report_data_source = AnyField()
     account = AnyField()
     spaces = AnyField()
-    reportingItems = AnyField()
+    reporting_items = AnyField()
 
 
-    reportType = AnyField()
-    reportItem = AnyField()
-    readingType = AnyField()
-    marketContext = AnyField()
-    oadrMinPeriod = AnyField()
-    oadrMaxPeriod = AnyField()
-    oadrOnChange = AnyField()
+    report_type = AnyField()
+    report_item = AnyField()
+    reading_type = AnyField()
+    market_context = AnyField()
+    oadr_min_period = AnyField()
+    oadr_max_period = AnyField()
+    oadr_on_change = AnyField()
     subscribed = AnyField()
 
     def __init__(self, deviceID, report, rID, reportSubject, reportDataSource, account, spaces, reportingItems): # reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
 
-        dev_test = DataPoint.find_one({DataPoint.deviceID(): deviceID})
+        dev_test = DataPoint.find_one({DataPoint.device_id(): deviceID})
         if dev_test:
             self._id = dev_test._id
-            self.reportingItems = dev_test.reportingItems
-            self.reportingItems.update(reportingItems)
+            self.reporting_items = dev_test.reportingItems
+            self.reporting_items.update(reportingItems)
         else:
-            self.deviceID = deviceID
-            self.reportingItems = reportingItems
+            self.device_id = deviceID
+            self.reporting_items = reportingItems
         self.report = report
-        self.rID = rID
-        self.reportSubject = reportSubject
-        self.reportDataSource = reportDataSource
+        self.rid = rID
+        self.report_subject = reportSubject
+        self.report_data_source = reportDataSource
         self.account = account
         self.spaces = spaces
 
@@ -150,105 +150,96 @@ class Device(MongoDB):
     """
     __collectionname__ = 'devices'
     # private fields
-    rID = AnyField()
+    rid = AnyField()
     report = AnyField()
-    reportDataSource = AnyField()
+    report_data_source = AnyField()
 
 
     # public fields
-    deviceID = AnyField()
-    reportSubject = AnyField() # Type
+    device_id = AnyField()
+    report_subject = AnyField() # Type
     account = AnyField()
     availability = AnyField()
     status = AnyField()
     spaces = AnyField()
 
-    #reportType = AnyField() # will go inside the status
-    #reportItem = AnyField() # will go inside the status
-    #readingType = AnyField() # will go inside the status
-    #marketContext = AnyField() # will go inside the status
-    #oadrMinPeriod = AnyField() # will go inside the status
-    #oadrMaxPeriod = AnyField() # will go inside the status
-    #oadrOnChange = AnyField() # will go inside the status
-    #subscribed = AnyField() # will go inside the status
-
     def __init__(self, report, deviceID, rID, spaces, reportSubject, reportDataSource, status_item):
 
 
-        dev_test = Device.find_one({Device.deviceID(): deviceID})
+        dev_test = Device.find_one({Device.device_id(): deviceID})
         if dev_test:
             self._id = dev_test._id
             self.status = dev_test.status
             self.status.update(status_item)
         else:
-            self.deviceID = deviceID
+            self.device_id = deviceID
             self.status = status_item
         self.report = report
-        self.rID = rID
+        self.rid = rID
         self.account = ""
         self.availability = ""
         self.spaces = spaces
-        self.reportSubject = reportSubject
-        self.reportDataSource = reportDataSource
+        self.report_subject = reportSubject
+        self.report_data_source = reportDataSource
 
 class ReportsToSend(MongoDB):
     """
     The reports that this VTN has to send to other VEN (pending_reports)
     """
     report = AnyField()
-    reportRequestID = AnyField()
+    report_request_id = AnyField()
     granularity = AnyField()
-    reportBackDuration = AnyField()
-    relatedDataPoints = AnyField()
+    report_back_duration = AnyField()
+    related_data_points = AnyField()
     canceled = AnyField()
 
     __collectionname__ = 'reports_to_send'
 
     def __init__(self, report, reportRequestID, granularity, reportBackDuration, relatedDataPoints, canceled=False):
         self.report = report
-        self.reportRequestID = reportRequestID
+        self.report_request_id = reportRequestID
         self.granularity = granularity
-        self.reportBackDuration = reportBackDuration
-        self.relatedDataPoints = relatedDataPoints
+        self.report_back_duration = reportBackDuration
+        self.related_data_points = relatedDataPoints
         self.canceled = canceled
 
 class Event(MongoDB):
-    eventID = AnyField()
-    modificationNumber = AnyField()
-    modificationDateTime = AnyField()
-    modificationReason = AnyField()
+    event_id = AnyField()
+    modification_number = AnyField()
+    modification_date_time = AnyField()
+    modification_reason = AnyField()
     priority = AnyField()
-    marketContext = AnyField()
-    createdDateTime = AnyField()
-    eventStatus = AnyField()
-    testEvent = AnyField()
-    vtnComment = AnyField()
+    market_context = AnyField()
+    created_date_time = AnyField()
+    event_status = AnyField()
+    test_event = AnyField()
+    vtn_comment = AnyField()
     components = AnyField()
     dtstart = AnyField()
     duration = AnyField()
     tolerance = AnyField()
-    eiNotification = AnyField()
-    eiRampUp = AnyField()
-    eiRecovery = AnyField()
+    ei_notification = AnyField()
+    ei_ramp_up = AnyField()
+    ei_recovery = AnyField()
     __collectionname__ = "dr_events"
 
     def __init__(self, eventID, priority, marketContext, eventStatus, testEvent, vtnComment, components, dtstart,
                  duration, tolerance, eiNotification, eiRampUp, eiRecovery, responseRequired, createdDateTime=datetime.utcnow()):
-        self.eventID = eventID
-        self.modificationNumber = str(0)
+        self.event_id = eventID
+        self.modification_number = str(0)
         self.priority = priority
-        self.marketContext = marketContext
-        self.createdDateTime = createdDateTime
-        self.eventStatus = eventStatus
-        self.testEvent = testEvent
-        self.vtnComment = vtnComment
+        self.market_context = marketContext
+        self.created_date_time = createdDateTime
+        self.event_status = eventStatus
+        self.test_event = testEvent
+        self.vtn_comment = vtnComment
         self.components = components
         self.dtstart = dtstart
         self.duration = duration
         self.tolerance = tolerance
-        self.eiNotification = eiNotification
-        self.eiRampUp = eiRampUp
-        self.eiRecovery = eiRecovery
+        self.ei_notification = eiNotification
+        self.ei_ramp_up = eiRampUp
+        self.ei_recovery = eiRecovery
         self.responseRequired = responseRequired
         self._modification_fields = []
 
@@ -267,13 +258,13 @@ class Event(MongoDB):
             if not inc:
                 if key not in ['createdDateTime', 'currentValue', 'eventStatus','modificationNumber','modificationDateTime','responseRequired']:
                     if self.__dict__[key] != self.__dict__[_key]:
-                        self.modificationNumber += 1
-                        self.modificationDateTime = datetime.utcnow().isoformat()
+                        self.modification_number += 1
+                        self.modification_date_time = datetime.utcnow().isoformat()
                         inc = True
                 elif key == 'eventStatus':
                     if self.__dict__[key] != self.__dict__[_key] and self.__dict__[key] == "cancelled":
-                        self.modificationNumber += 1
-                        self.modificationDateTime = datetime.utcnow().isoformat()
+                        self.modification_number += 1
+                        self.modification_date_time = datetime.utcnow().isoformat()
                         inc = True
             self.__dict__.__delitem__(_key)
         self._modification_fields = []
@@ -284,19 +275,19 @@ class EventSignal(MongoDB):
     __collectionname__ = "dr_event_signals"
 
     event = AnyField()
-    signalID = AnyField()
-    signalType = AnyField()
-    signalName = AnyField()
-    itemBase = AnyField()
-    currentValue = AnyField()
+    signal_id = AnyField()
+    signal_type = AnyField()
+    signal_name = AnyField()
+    item_base = AnyField()
+    current_value = AnyField()
 
     def __init__(self, event, signalID, signalType, signalName, itemBase, currentValue):
         self.event = event
-        self.signalID = signalID
-        self.signalType = signalType
-        self.signalName = signalName
-        self.itemBase = itemBase
-        self.currentValue = currentValue
+        self.signal_id = signalID
+        self.signal_type = signalType
+        self.signal_name = signalName
+        self.item_base = itemBase
+        self.current_value = currentValue
         self._modification_fields = []
 
     def __setattr__(self, key, value):
@@ -329,14 +320,14 @@ class EventInterval(MongoDB):
     uid = AnyField()
     dtstart = AnyField()
     duration = AnyField()
-    signalPayload = AnyField()
+    signal_payload = AnyField()
 
     def __init__(self, signal, uid, dtstart, duration, signalPayload):
         self.signal = signal
         self.uid = uid
         self.dtstart = dtstart
         self.duration = duration
-        self.signalPayload = signalPayload
+        self.signal_payload = signalPayload
         self._modification_fields = []
 
     def __setattr__(self, key, value):

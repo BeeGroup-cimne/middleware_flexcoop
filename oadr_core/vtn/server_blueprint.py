@@ -112,7 +112,7 @@ def send_message(oadrMessage, VEN, params):
 def when_VEN_registered(sender, response, **extra):
     payload = etree.fromstring(response)
     venID = payload.find(".//ei:venID", namespaces=NAMESPACES).text
-    ven = VEN.find_one({VEN.venID():venID})
+    ven = VEN.find_one({VEN.ven_id():venID})
     registerReport = OadrRegisterReport()
     send_message(registerReport, ven, {})
 
@@ -120,6 +120,6 @@ def when_VEN_registered(sender, response, **extra):
 def when_report_in_registered_report(sender, response, **extra):
     payload = etree.fromstring(response)
     venID = payload.find(".//ei:venID", namespaces=NAMESPACES).text
-    ven = VEN.find_one({VEN.venID(): venID})
+    ven = VEN.find_one({VEN.ven_id(): venID})
     createdReport = OadrCreatedReport()
     send_message(createdReport, ven, {})

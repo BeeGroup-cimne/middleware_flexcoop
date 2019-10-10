@@ -14,7 +14,7 @@ def view_ven_list():
 
 @web.route("/ven/<venID>", methods=['GET'])
 def view_ven_info(venID):
-    ven = VEN.find_one({VEN.venID(): venID})
+    ven = VEN.find_one({VEN.ven_id(): venID})
     try:
         poll_messages= oadrPollQueue[venID]
     except:
@@ -24,7 +24,7 @@ def view_ven_info(venID):
 
 @web.route("/ven/<venID>/delete", methods=['GET'])
 def view_ven_delete(venID):
-    ven = VEN.find_one({VEN.venID(): venID})
+    ven = VEN.find_one({VEN.ven_id(): venID})
     cancel_registration = OadrCancelPartyRegistration()
     params = {
         "registrationID": ven.registrationID,
@@ -35,7 +35,7 @@ def view_ven_delete(venID):
 
 @web.route("/ven/<venID>/reregister", methods=['GET'])
 def view_ven_reregister(venID):
-    ven = VEN.find_one({VEN.venID(): venID})
+    ven = VEN.find_one({VEN.ven_id(): venID})
     re_registration = OadrRequestReregistration()
     params = {
     }
@@ -44,7 +44,7 @@ def view_ven_reregister(venID):
 
 @web.route("/ven_reports/<venID>", methods=['GET','POST'])
 def view_ven_reports(venID):
-    ven = VEN.find_one({VEN.venID(): venID})
+    ven = VEN.find_one({VEN.ven_id(): venID})
     reports = MetadataReports.find({MetadataReports.ven(): ven._id})
     report_data_points={}
     for report in reports:
@@ -141,7 +141,7 @@ def create_vtn_event_signals(eventID):
         print(request.form)
         if form.validate():
             data = request.form
-            event = Event.find_one({Event.eventID():eventID})
+            event = Event.find_one({Event.event_id():eventID})
             signal = EventSignal(event._id, data['signalID'], data['signalType'], data['signalName'], "", "")
             signal.save()
             interval = EventInterval(signal._id, data['intervals-0-uid'], data['intervals-0-dtstart'], data['intervals-0-duration'], data['intervals-0-signalPayload'])

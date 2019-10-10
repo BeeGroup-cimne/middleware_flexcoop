@@ -20,7 +20,7 @@ class OadrCreatedEvent(OadrMessage):
 
         #respond
         if venID:
-            ven = VEN.query.filter(VEN.venID == venID).first()
+            ven = VEN.query.filter(VEN.ven_id == venID).first()
             if ven is None:
                 content = oadrResponse("452", "Invalid venID", str(""))
                 return oadrPayload(content)
