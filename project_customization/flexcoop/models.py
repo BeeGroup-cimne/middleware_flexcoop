@@ -113,17 +113,7 @@ class DataPoint(MongoDB):
     spaces = AnyField()
     reporting_items = AnyField()
 
-
-    report_type = AnyField()
-    report_item = AnyField()
-    reading_type = AnyField()
-    market_context = AnyField()
-    oadr_min_period = AnyField()
-    oadr_max_period = AnyField()
-    oadr_on_change = AnyField()
-    subscribed = AnyField()
-
-    def __init__(self, device_id, report, rid, report_subject, report_data_source, account, spaces, reporting_items): # reportType, reportItem, readingType, marketContext, oadrMinPeriod, oadrMaxPeriod, oadrOnChange, subscribed=False):
+    def __init__(self, device_id, report, rid, report_subject, report_data_source, account, spaces, reporting_items):
 
         dev_test = DataPoint.find_one({DataPoint.device_id(): device_id})
         if dev_test:

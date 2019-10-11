@@ -3,7 +3,7 @@ from datetime import datetime
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import MetadataReports, DataPoint, Device, map_rid_device_id
-from project_customization.flexcoop.utils import parse_rid, statusMapping
+from project_customization.flexcoop.utils import parse_rid, status_mapping
 
 
 class MetadataTelemetryStatusReport(OadrReport):
@@ -46,7 +46,7 @@ class MetadataTelemetryStatusReport(OadrReport):
                                                                                            namespaces=NAMESPACES) is not None else None
             phisical_device, groupID, spaces, load, metric = parse_rid(rID)
             status_item = {
-                statusMapping[metric]: {
+                status_mapping[metric]: {
                     "value": None,
                     "report_type": reportType,
                     "units": reportItem,
@@ -55,7 +55,8 @@ class MetadataTelemetryStatusReport(OadrReport):
                     "min_period": minSampling,
                     "max_sampling": maxSampling,
                     "on_change": onChange,
-                    "subscribed": False
+                    "subscribed": False,
+                    "oadr_name": metric
                 }
             }
             deviceID = map_rid_device_id.get_or_create_deviceID(rID)

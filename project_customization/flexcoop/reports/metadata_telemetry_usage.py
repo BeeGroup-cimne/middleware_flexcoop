@@ -59,7 +59,8 @@ class MetadataTelemetryUsageReport(OadrReport):
                     "min_period": minSampling,
                     "max_sampling": maxSampling,
                     "on_change": onChange,
-                    "subscribed": False
+                    "subscribed": False,
+                    "oadr_name": metric
                 }
 
             }

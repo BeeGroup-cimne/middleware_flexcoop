@@ -1,7 +1,7 @@
 import requests
 from flask import request, abort, Response, Blueprint, current_app as app
 from lxml import etree
-
+from project_customization.flexcoop.models import oadrPollQueue
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.vtn.after_request import AfterResponse
 from project_customization.flexcoop.models import VEN
@@ -81,13 +81,13 @@ def send_message(oadrMessage, VEN, params):
     global oadrPollQueue
     message_payload = oadrMessage.send_oadr_message(VEN, params)
 
-    if VEN.oadrTransportName == "simpleHttp":
-        if VEN.oadrHttpPullModel:
+    if VEN.oadr_transport_name == "simpleHttp":
+        if VEN.oadr_http_pull_model:
             # if pull method, add the message to the queue for this VEN
             try:
-                oadrPollQueue[VEN.venID].append((oadrMessage.__class__.__name__,  message_payload))
+                oadrPollQueue[VEN.ven_id].append((oadrMessage.__class__.__name__,  message_payload))
             except:
-                oadrPollQueue[VEN.venID] = [(oadrMessage.__class__.__name__, message_payload)]
+                oadrPollQueue[VEN.ven_id] = [(oadrMessage.__class__.__name__, message_payload)]
             return None
         else:
             # if push method, send the message
@@ -96,7 +96,7 @@ def send_message(oadrMessage, VEN, params):
             for k, v in OADR_MESSAGES_ENDPOINTS.items():
                 if message in v.keys():
                     events = v[message][1]['send_push'] if 'send_push' in v[message][1] else []
-                    url="{}/{}".format(VEN.oadrTransportAddress, k)
+                    url="{}/{}".format(VEN.oadr_transport_address, k)
                     response = requests.post(url, data=etree.tostring(message_payload), verify=False)
                     if response and response.ok:
                         oadrMessage.response_callback(response)
@@ -111,15 +111,15 @@ def send_message(oadrMessage, VEN, params):
 @ven_registered.connect_via(AfterResponse)
 def when_VEN_registered(sender, response, **extra):
     payload = etree.fromstring(response)
-    venID = payload.find(".//ei:venID", namespaces=NAMESPACES).text
-    ven = VEN.find_one({VEN.ven_id():venID})
+    ven_id = payload.find(".//ei:venID", namespaces=NAMESPACES).text
+    ven = VEN.find_one({VEN.ven_id():ven_id})
     registerReport = OadrRegisterReport()
     send_message(registerReport, ven, {})
 
 @registered_report_reports.connect_via(oadr)
 def when_report_in_registered_report(sender, response, **extra):
     payload = etree.fromstring(response)
-    venID = payload.find(".//ei:venID", namespaces=NAMESPACES).text
-    ven = VEN.find_one({VEN.ven_id(): venID})
+    ven_id = payload.find(".//ei:venID", namespaces=NAMESPACES).text
+    ven = VEN.find_one({VEN.ven_id(): ven_id})
     createdReport = OadrCreatedReport()
     send_message(createdReport, ven, {})

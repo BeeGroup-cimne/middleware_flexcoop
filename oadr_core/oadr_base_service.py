@@ -24,7 +24,7 @@ class OadrMessage():
         raise NotImplementedError("The response should be created at service subclass")
 
     def send_oadr_message(self, VEN, params):
-        params['venID'] = VEN.venID
+        params['venID'] = VEN.ven_id
         message_payload = self._create_message(params)
         return message_payload
 

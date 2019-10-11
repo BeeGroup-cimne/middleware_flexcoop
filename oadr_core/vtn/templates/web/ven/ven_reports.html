@@ -3,7 +3,7 @@
 
 {% block content %}
   <ul class="list-group">
-  <h1>Report capabilities of {{ ven.oadrVenName }} <small><a href="{{ url_for('visual.view_ven_list') }}">(back to list)</a></small></h1>
+  <h1>Report capabilities of {{ ven.oadr_ven_name }} <small><a href="{{ url_for('visual.view_ven_list') }}">(back to list)</a></small></h1>
   <form method="post">
       <table class="table">
           <thead>
@@ -16,22 +16,39 @@
           <tbody>
             {% for report, data_points in report_data_points.items() %}
             <tr>
-                <th scope="row">{{ report.eiReportID }}</th>
-                <td>{{ report.reportName }}</td>
+                <th scope="row">{{ report.ei_report_id }}</th>
+                <td>{{ report.report_name }}</td>
                 <td></td>
                 </td>
             </tr>
 
-            {% for data in data_points %}
+            {% for data in data_points["data_points"] %}
+                {% for k, v in data.reporting_items.items()  %}
                 <tr>
                     <td></td>
-                    <td>{{ data.rID }}</td>
+                    <td>{{ data.rid }}.{{ k }}</td>
                     <td>
                         <div class="custom-control custom-checkbox col-sm">
-                            <input type="checkbox" class="custom-control-input" name="r{{ report.eiReportID }}-{{ data.rID }}" {% if data.subscribed == True %} checked="checked" {% endif %}>
+                            <input type="checkbox" class="custom-control-input" name="r{{ report.ei_report_id }}-{{ data.rid }}-{{ k }}" {% if data.reporting_items[k].subscribed == True %} checked="checked" {% endif %}>
                         </div>
                     </td>
+
                 </tr>
+                {% endfor %}
+            {% endfor %}
+            {% for data in data_points["devices"] %}
+                {% for k, v in data.status.items()  %}
+                <tr>
+                    <td></td>
+                    <td>{{ data.rid }}.{{ k }}</td>
+                    <td>
+                        <div class="custom-control custom-checkbox col-sm">
+                            <input type="checkbox" class="custom-control-input" name="r{{ report.ei_report_id }}-{{ data.rid }}-{{ k }}" {% if data.status[k].subscribed == True %} checked="checked" {% endif %}>
+                        </div>
+                    </td>
+
+                </tr>
+                {% endfor %}
             {% endfor %}
             {% endfor %}
           </tbody>
