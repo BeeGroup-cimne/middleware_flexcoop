@@ -88,6 +88,8 @@ class MetadataReports(MongoDB):
     report_name = AnyField()
     created_date_time = AnyField()
     subscribed = AnyField()
+    owned = AnyField()
+
     def __init__(self, ven, ei_report_id, specifier_id, duration, report_name, created_date_time=datetime.utcnow(), subscribed=False):
         self.ven = ven
         self.ei_report_id = ei_report_id
@@ -96,6 +98,7 @@ class MetadataReports(MongoDB):
         self.report_name = report_name
         self.created_date_time = created_date_time
         self.subscribed = subscribed
+        self.owned = False
 
 
 class DataPoint(MongoDB):
