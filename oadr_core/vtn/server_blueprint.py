@@ -1,6 +1,8 @@
 import requests
+from OpenSSL import crypto
 from flask import request, abort, Response, Blueprint, current_app as app
 from lxml import etree
+
 from project_customization.flexcoop.models import oadrPollQueue
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.vtn.after_request import AfterResponse
@@ -50,8 +52,13 @@ def openADR_VTN_service(service):
     # read data as XML
     payload = etree.fromstring(request.get_data())
     # identify which is the message recieved:
-    # TODO: Validate signed object
     print(request.headers)
+    cert_string = request.headers['X-Ssl-Cert'].replace("&", "\n")
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
+    if cert.has_expired():
+        abort(Response("Invalid certificate"), 403)
+    request.cert = cert
+    # TODO: Validate signed object
 
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
