@@ -80,3 +80,10 @@ class MongoDB(object, metaclass=MongoMeta):
 
     def delete(self):
         self.__mongo__.delete_one({"_id":self._id})
+
+    @staticmethod
+    def to_dict(list_orig):
+        ret_list = []
+        for x in list_orig:
+            ret_list.append(x.__dict__)
+        return ret_list
