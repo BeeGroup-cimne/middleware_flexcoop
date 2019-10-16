@@ -53,7 +53,7 @@ def openADR_VTN_service(service):
     payload = etree.fromstring(request.get_data())
     # identify which is the message recieved:
     print(request.headers)
-    cert_string = request.headers['X-Ssl-Cert'].replace("&", "\n")
+    cert_string = request.headers['X-Ssl-Cert']#.replace("&", "\n")
     cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
     if cert.has_expired():
         abort(Response("Invalid certificate"), 403)
