@@ -43,7 +43,7 @@ class FlexcoopCustomization():
             ven.registration_id = str(ven.ven_id)
         else:
             ven = VEN.find_one({VEN.registration_id():registrationID})
-            if not ven or str(ven.venID) != venID:
+            if not ven or str(ven.ven_id) != venID:
                 raise InvalidVenException()
 
         # save info of new ven

@@ -8,21 +8,33 @@ import requests
 from lxml import etree
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisterReport
 
-MIDDLEWARE_URL = "http://217.182.160.171:9022/VTN/OpenADR2/Simple/2.0b/"
-MIDDLEWARE_URL = "http://127.0.0.1:8000/VTN/OpenADR2/Simple/2.0b/"
+MIDDLEWARE_URL = "https://openadr.middleware.platform.flexcoop.eu/VTN/OpenADR2/Simple/2.0b/"; prod = 1
+MIDDLEWARE_URL = "http://127.0.0.1:8000/VTN/OpenADR2/Simple/2.0b/"; prod = 0
 
 xmlparser = etree.XMLParser()
 schema_val_data = etree.parse(open("oadr_core/oadr_xml_schema/oadr_20b.xsd"), xmlparser)
 schema_val = etree.XMLSchema(schema_val_data)
 
-venID = "b491f546-eb3d-11e9-a1b7-ac1f6b403fbc"
+venID = ""
 registrationID = ""
 
-def register_ven(venID = None, registrationID= None):
+def register_ven(xml_file):
     # Generate CreatePartyRegistration xml
-    content = oadrCreatePartyRegistration("1", "2.0b", "simpleHttp", "127.0.0.1:8080", False, False, "Test", True, registrationID,
-                                          venID)
-    r = requests.post(MIDDLEWARE_URL+"EiRegisterParty", data=etree.tostring(oadrPayload(content)), verify=False)
+    #content = oadrCreatePartyRegistration("1", "2.0b", "simpleHttp", "127.0.0.1:8080", False, False, "Test", True, registrationID,
+    #                                      venID)
+    content = etree.parse(xml_file, xmlparser)
+
+    if prod:
+        r = requests.post(MIDDLEWARE_URL + "EiRegisterParty", data=etree.tostring(content), cert=(
+            '/Users/eloigabal/Desktop/flexcoop_certs/client.crt',
+            '/Users/eloigabal/Desktop/flexcoop_certs/key.key'),
+                          verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
+    else:
+        headers = {"X-Ssl-Cert": open(
+            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            "\n", "&")}
+        r = requests.post(MIDDLEWARE_URL + "EiRegisterParty", data=etree.tostring(content), headers=headers, verify=False)
+
     response = etree.fromstring(r.text)
     code = response.find(".//ei:responseCode", namespaces=NAMESPACES).text
     description = response.find(".//ei:responseDescription", namespaces=NAMESPACES).text
@@ -33,7 +45,7 @@ def register_ven(venID = None, registrationID= None):
 
     return venID, registrationID
 
-def send_metadata_report(venID):
+def send_metadata_report(xml_file):
     # requestID = "0"  # nobody requested this report
     # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
     #             "duration": "P3Y6M4DT12H30M5S",
@@ -44,13 +56,24 @@ def send_metadata_report(venID):
     #                              "market_context": "the market context"}]
     #             }]
     # content = oadrRegisterReport(requestID, requestID, venID, reports)
-    content = etree.parse("oadr_core/oadr_xml_example/new_example.xml", xmlparser)
-    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
-    response = etree.fromstring(r.text)
+    content = etree.parse(xml_file, xmlparser)
+
+    if prod:
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), cert=(
+            '/Users/eloigabal/Desktop/flexcoop_certs/client.crt',
+            '/Users/eloigabal/Desktop/flexcoop_certs/key.key'),
+                          verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
+    else:
+        headers = {"X-Ssl-Cert": open(
+            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            "\n", "&")}
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
+
+        response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
 
-def send_test_report_status(venID):
+def send_test_report_status(xml_file):
     # requestID = "0"  # nobody requested this report
     # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
     #             "duration": "P3Y6M4DT12H30M5S",
@@ -61,13 +84,23 @@ def send_test_report_status(venID):
     #                              "market_context": "the market context"}]
     #             }]
     # content = oadrRegisterReport(requestID, requestID, venID, reports)
-    content = etree.parse("oadr_core/oadr_xml_example/ei_report_service/test_status.xml", xmlparser)
-    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
+    content = etree.parse(xml_file, xmlparser)
+    if prod:
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), cert=(
+            '/Users/eloigabal/Desktop/flexcoop_certs/client.crt',
+            '/Users/eloigabal/Desktop/flexcoop_certs/key.key'),
+                          verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
+    else:
+        headers = {"X-Ssl-Cert": open(
+            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            "\n", "&")}
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
+
     response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
 
-def send_test_report_usage(venID):
+def send_test_report_usage(xml_file):
     # requestID = "0"  # nobody requested this report
     # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
     #             "duration": "P3Y6M4DT12H30M5S",
@@ -78,18 +111,30 @@ def send_test_report_usage(venID):
     #                              "market_context": "the market context"}]
     #             }]
     # content = oadrRegisterReport(requestID, requestID, venID, reports)
-    content = etree.parse("oadr_core/oadr_xml_example/ei_report_service/test.xml", xmlparser)
-    r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), verify=False)
+
+    content = etree.parse(xml_file, xmlparser)
+    if prod:
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), cert=(
+            '/Users/eloigabal/Desktop/flexcoop_certs/client.crt',
+            '/Users/eloigabal/Desktop/flexcoop_certs/key.key'),
+                          verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
+    else:
+        headers = {"X-Ssl-Cert": open(
+            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            "\n", "&")}
+        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
+
+
     response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
 
 
-venID, registrationID = register_ven(venID, venID)
+venID, registrationID = register_ven("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/register_ven.xml")
+send_metadata_report("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/register_reports.xml")
 
-send_metadata_report(venID)
-send_test_report_status(venID)
-send_test_report_usage(venID)
+send_test_report_status("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_status.xml")
+send_test_report_usage("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_usage.xml")
 
 
 #     content = oadrPoll(venID)
