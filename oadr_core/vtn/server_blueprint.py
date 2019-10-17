@@ -55,10 +55,10 @@ def openADR_VTN_service(service):
     #print(request.headers)
     cert_string = request.headers['X-Ssl-Cert'].replace("&", "\n").replace("\t","")
     print(repr(cert_string))
-    cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
-    if cert.has_expired():
+    cert_obj = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
+    if cert_obj.has_expired():
         abort(Response("Invalid certificate"), 403)
-    request.cert = cert
+    request.cert = {k.decode("utf-8"):v.decode("utf-8") for k,v in cert_obj.get_subject().get_components()}
     print("accepted cert")
     # TODO: Validate signed object
 
