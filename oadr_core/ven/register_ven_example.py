@@ -69,7 +69,7 @@ def send_metadata_report(xml_file):
             "\n", "&")}
         r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
 
-        response = etree.fromstring(r.text)
+    response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
 

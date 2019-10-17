@@ -21,7 +21,7 @@
                         <ns8:oadrReportPayload>
                             <ns2:rID>multisensor_1_HypertechLab_LabOpenSpace_sensingDevice_2_sensorLuminance</ns2:rID>
                             <ns2:payloadFloat>
-<ns2:value>23.0</ns2:value>
+<ns2:value>25.0</ns2:value>
                             </ns2:payloadFloat>
                         </ns8:oadrReportPayload>
                     </ns2:interval>
@@ -32,7 +32,7 @@
                 <ns2:reportName>TELEMETRY_USAGE</ns2:reportName>
                 <ns2:createdDateTime>2019-09-24T12:14:03.784</ns2:createdDateTime>
             </ns8:oadrReport>
-            <ns2:venID>b491f546-eb3d-11e9-a1b7-ac1f6b403fbc</ns2:venID>
+            <ns2:venID>25e3ab28-f119-11e9-84cb-ac1f6b403fbc</ns2:venID>
         </ns8:oadrUpdateReport>
     </ns8:oadrSignedObject>
 </ns8:oadrPayload>
