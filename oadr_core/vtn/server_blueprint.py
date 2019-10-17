@@ -59,6 +59,7 @@ def openADR_VTN_service(service):
     if cert.has_expired():
         abort(Response("Invalid certificate"), 403)
     request.cert = cert
+    print("accepted cert")
     # TODO: Validate signed object
 
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
