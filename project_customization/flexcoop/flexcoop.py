@@ -32,7 +32,6 @@ class FlexcoopCustomization():
                                                 registrationID, venID, oadrTransportAddress, oadrVenName, oadrHttpPullModel):
 
         # Check for correct ven and registrationID
-        print("AAAAAAAAAAAAAAA")
         if not registrationID:
             if venID:
                 ven = VEN.find_one({VEN.ven_id(): venID})

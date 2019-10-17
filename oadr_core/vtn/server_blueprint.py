@@ -64,11 +64,13 @@ def openADR_VTN_service(service):
 
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
+    print(message)
     responder = None
     try:
         messages = OADR_MESSAGES_ENDPOINTS[service]
         try:
             responder, events = messages[message]
+            print("going to respond the request")
             response = etree.tostring(responder.respond(payload))
             if 'recieve' in events:
                 app.response_callback.append((events['recieve'], response))
