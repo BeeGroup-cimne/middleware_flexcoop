@@ -85,6 +85,7 @@ def openADR_VTN_service(service):
     except NotImplementedError as e:
         abort(Response("The service {} is not implemented yet".format(message), 501))
     except Exception as e:
+        print(e)
         abort(Response(e, 500))
 
 
