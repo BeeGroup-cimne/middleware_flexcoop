@@ -60,7 +60,7 @@ class MetadataTelemetryStatusReport(OadrReport):
                 }
             }
             deviceID = map_rid_device_id.get_or_create_deviceID(rID)
-            device = Device(report._id, deviceID, load, spaces, reportSubject, reportDataSource, status_item)
+            device = Device.get_or_create(report._id, deviceID, load, spaces, reportSubject, reportDataSource, status_item)
             device.save()
 
 

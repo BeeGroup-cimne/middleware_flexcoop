@@ -65,7 +65,7 @@ class MetadataTelemetryUsageReport(OadrReport):
 
             }
             deviceID = map_rid_device_id.get_or_create_deviceID(rID)
-            data_point = DataPoint(deviceID, report._id, load, reportSubject, reportDataSource, "", spaces, reporting_capabilities)
+            data_point = DataPoint.get_or_create(deviceID, report._id, load, reportSubject, reportDataSource, spaces, reporting_capabilities)
             data_point.save()
 
     def create(self, *args, **kwargs):

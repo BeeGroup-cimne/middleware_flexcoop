@@ -119,16 +119,10 @@ class DataPoint(MongoDB):
     spaces = AnyField()
     reporting_items = AnyField()
 
-    def __init__(self, device_id, report, rid, report_subject, report_data_source, account, spaces, reporting_items):
+    def __init__(self, device_id, report, rid, report_subject, report_data_source, spaces, reporting_items):
 
-        dev_test = DataPoint.find_one({DataPoint.device_id(): device_id})
-        if dev_test:
-            self._id = dev_test._id
-            self.reporting_items = dev_test.reporting_items
-            self.reporting_items.update(reporting_items)
-        else:
-            self.device_id = device_id
-            self.reporting_items = reporting_items
+        self.device_id = device_id
+        self.reporting_items = reporting_items
         self.report = report
         self.rid = rid
         self.report_subject = report_subject
@@ -136,6 +130,20 @@ class DataPoint(MongoDB):
         self.account = request.cert['CN'] if hasattr(request, "cert") else None
         self.spaces = spaces
 
+    @staticmethod
+    def get_or_create(device_id, report, rid, report_subject, report_data_source, spaces, reporting_items):
+        dev_test = DataPoint.find_one({DataPoint.device_id(): device_id})
+        if dev_test:
+            dev_test.reporting_items.update(reporting_items)
+            dev_test.report = report
+            dev_test.rid = rid
+            dev_test.availability = ""
+            dev_test.spaces = spaces
+            dev_test.report_subject = report_subject
+            dev_test.report_data_source = report_data_source
+        else:
+            dev_test = DataPoint(device_id, report, rid, report_subject, report_data_source, spaces, reporting_items)
+        return dev_test
 
 
 
@@ -160,15 +168,8 @@ class Device(MongoDB):
 
     def __init__(self, report, device_id, rid, spaces, report_subject, report_data_source, status_item):
 
-
-        dev_test = Device.find_one({Device.device_id(): device_id})
-        if dev_test:
-            self._id = dev_test._id
-            self.status = dev_test.status
-            self.status.update(status_item)
-        else:
-            self.device_id = device_id
-            self.status = status_item
+        self.device_id = device_id
+        self.status = status_item
         self.report = report
         self.rid = rid
         self.account = request.cert['CN'] if hasattr(request, "cert") else None
@@ -176,6 +177,23 @@ class Device(MongoDB):
         self.spaces = spaces
         self.report_subject = report_subject
         self.report_data_source = report_data_source
+
+    @staticmethod
+    def get_or_create(report, device_id, rid, spaces, report_subject, report_data_source, status_item):
+        dev_test = Device.find_one({Device.device_id(): device_id})
+        if dev_test:
+            dev_test.update(status_item)
+            dev_test.report = report
+            dev_test.rid = rid
+            dev_test.availability = ""
+            dev_test.spaces = spaces
+            dev_test.report_subject = report_subject
+            dev_test.report_data_source = report_data_source
+        else:
+            dev_test = Device(report, device_id, rid, spaces, report_subject, report_data_source, status_item)
+        return dev_test
+
+
 
 class ReportsToSend(MongoDB):
     """
