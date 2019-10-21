@@ -182,7 +182,7 @@ class Device(MongoDB):
     def get_or_create(report, device_id, rid, spaces, report_subject, report_data_source, status_item):
         dev_test = Device.find_one({Device.device_id(): device_id})
         if dev_test:
-            dev_test.update(status_item)
+            dev_test.status.update(status_item)
             dev_test.report = report
             dev_test.rid = rid
             dev_test.availability = ""
