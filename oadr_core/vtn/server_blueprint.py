@@ -75,7 +75,7 @@ def openADR_VTN_service(service):
             if 'recieve' in events:
                 app.response_callback.append((events['recieve'], response))
 
-            return response, 200, {'Content-Type': 'application/xml; charset=utf-8'}
+            return response, 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))
     except KeyError as e:
