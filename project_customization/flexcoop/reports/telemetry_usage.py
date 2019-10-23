@@ -6,6 +6,7 @@ from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case
+from flask import request
 
 
 def get_report_models():
@@ -44,6 +45,8 @@ def get_data_model(element):
         data_quality = AnyField()
         value = AnyField()
         device_id = AnyField()
+        account_id = AnyField()
+        aggregator_id = AnyField()
 
         def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
             self.device_id = deviceID
@@ -55,6 +58,8 @@ def get_data_model(element):
             self.accuracy = accuracy
             self.data_quality = dataQuality
             self.value = value
+            self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
 
     return ReportDataModel
 

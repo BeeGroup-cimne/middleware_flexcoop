@@ -45,7 +45,8 @@ class VEN(MongoDB):
     oadr_xml_signature = AnyField()
     oadr_ven_name = AnyField()
     oadr_http_pull_model = AnyField()
-    account = AnyField()
+    account_id = AnyField()
+    aggregator_id = AnyField()
 
     def __init__(self, ven_id, registration_id, oadr_profile_name, oadr_transport_name, oadr_transport_address,
                  oadr_report_only, oadr_xml_signature, oadr_ven_name, oadr_http_pull_model):
@@ -62,7 +63,8 @@ class VEN(MongoDB):
         self.oadr_xml_signature = oadr_xml_signature
         self.oadr_ven_name = oadr_ven_name
         self.oadr_http_pull_model = oadr_http_pull_model
-        self.account = request.cert['CN'] if hasattr(request, "cert") else None
+        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
 
     def remove_reports(self):
         ven_reports = MetadataReports.find({MetadataReports.ven(): self._id})
@@ -115,7 +117,8 @@ class DataPoint(MongoDB):
     rid = AnyField()
     report_subject = AnyField()
     report_data_source = AnyField()
-    account = AnyField()
+    account_id = AnyField()
+    aggregator_id = AnyField()
     spaces = AnyField()
     reporting_items = AnyField()
 
@@ -127,7 +130,8 @@ class DataPoint(MongoDB):
         self.rid = rid
         self.report_subject = report_subject
         self.report_data_source = report_data_source
-        self.account = request.cert['CN'] if hasattr(request, "cert") else None
+        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
         self.spaces = spaces
 
     @staticmethod
@@ -161,7 +165,8 @@ class Device(MongoDB):
     # public fields
     device_id = AnyField()
     report_subject = AnyField() # Type
-    account = AnyField()
+    account_id = AnyField()
+    aggregator_id = AnyField()
     availability = AnyField()
     status = AnyField()
     spaces = AnyField()
@@ -172,7 +177,8 @@ class Device(MongoDB):
         self.status = status_item
         self.report = report
         self.rid = rid
-        self.account = request.cert['CN'] if hasattr(request, "cert") else None
+        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
         self.availability = ""
         self.spaces = spaces
         self.report_subject = report_subject
