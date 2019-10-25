@@ -160,7 +160,7 @@ class TelemetryStatusReport(OadrReport):
             accuracy_i = accuracy.text if accuracy is not None else ""
             dataQuality_i = dataQuality.text if dataQuality is not None else ""
 
-            phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
+            phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
 
 
 
@@ -168,7 +168,7 @@ class TelemetryStatusReport(OadrReport):
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
-                phisical_device, groupID, spaces, load, metric = parse_rid(rid_i)
+                phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
                 update_values = {}
                 if device:
                     device.status[status_mapping[metric]].update({"value": value_i})

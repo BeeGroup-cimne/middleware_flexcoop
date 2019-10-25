@@ -233,16 +233,16 @@ class Event(MongoDB):
     event_status = AnyField()
     test_event = AnyField()
     vtn_comment = AnyField()
-    components = AnyField()
     dtstart = AnyField()
     duration = AnyField()
     tolerance = AnyField()
     ei_notification = AnyField()
     ei_ramp_up = AnyField()
     ei_recovery = AnyField()
-    __collectionname__ = "dr_events"
+    responseRequired = AnyField()
+    __collectionname__ = "events"
 
-    def __init__(self, eventID, priority, marketContext, eventStatus, testEvent, vtnComment, components, dtstart,
+    def __init__(self, eventID, priority, marketContext, eventStatus, testEvent, vtnComment, dtstart,
                  duration, tolerance, eiNotification, eiRampUp, eiRecovery, responseRequired, createdDateTime=datetime.utcnow()):
         self.event_id = eventID
         self.modification_number = str(0)
@@ -252,7 +252,6 @@ class Event(MongoDB):
         self.event_status = eventStatus
         self.test_event = testEvent
         self.vtn_comment = vtnComment
-        self.components = components
         self.dtstart = dtstart
         self.duration = duration
         self.tolerance = tolerance
@@ -289,23 +288,25 @@ class Event(MongoDB):
         self._modification_fields = []
         super(Event, self).save()
 
+    def event_signals(self):
+        return EventSignal.find({EventSignal.event(): self._id})
 
 class EventSignal(MongoDB):
-    __collectionname__ = "dr_event_signals"
+    __collectionname__ = "event_signals"
 
     event = AnyField()
-    signal_id = AnyField()
-    signal_type = AnyField()
+    target = AnyField()
     signal_name = AnyField()
-    item_base = AnyField()
+    signal_type = AnyField()
+    signal_id = AnyField()
     current_value = AnyField()
 
-    def __init__(self, event, signalID, signalType, signalName, itemBase, currentValue):
+    def __init__(self, event, target, signalID, signalType, signalName, currentValue):
         self.event = event
-        self.signal_id = signalID
-        self.signal_type = signalType
+        self.target = target
         self.signal_name = signalName
-        self.item_base = itemBase
+        self.signal_type = signalType
+        self.signal_id = signalID
         self.current_value = currentValue
         self._modification_fields = []
 
@@ -331,21 +332,23 @@ class EventSignal(MongoDB):
             self.__dict__.__delitem__(_key)
         super(EventSignal, self).save()
 
+    def signal_intervals(self):
+        return EventInterval.find({EventInterval.signal(): self._id})
+
 
 class EventInterval(MongoDB):
-    __collectionname__ = "dr_event_intervals"
-
+    __collectionname__ = "event_signal_intervals"
     signal = AnyField()
-    uid = AnyField()
     dtstart = AnyField()
     duration = AnyField()
+    uid = AnyField()
     signal_payload = AnyField()
 
-    def __init__(self, signal, uid, dtstart, duration, signal_payload):
+    def __init__(self, signal, dtstart, duration, uid, signal_payload):
         self.signal = signal
-        self.uid = uid
         self.dtstart = dtstart
         self.duration = duration
+        self.uid = uid
         self.signal_payload = signal_payload
         self._modification_fields = []
 

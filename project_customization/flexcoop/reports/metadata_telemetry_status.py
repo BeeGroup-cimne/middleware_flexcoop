@@ -44,7 +44,7 @@ class MetadataTelemetryStatusReport(OadrReport):
                 ".//oadr:oadrMinPeriod", namespaces=NAMESPACES) is not None else None
             onChange = d.find(".//oadr:oadrOnChange", namespaces=NAMESPACES).text if d.find(".//oadr:oadrOnChange",
                                                                                            namespaces=NAMESPACES) is not None else None
-            phisical_device, groupID, spaces, load, metric = parse_rid(rID)
+            phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rID)
             status_item = {
                 status_mapping[metric]: {
                     "value": None,
