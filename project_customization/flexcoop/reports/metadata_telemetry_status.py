@@ -1,9 +1,11 @@
+import requests
 from datetime import datetime
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import MetadataReports, DataPoint, Device, map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, status_mapping
+from settings import NOTIFICATION_REST
 
 
 class MetadataTelemetryStatusReport(OadrReport):
@@ -62,6 +64,8 @@ class MetadataTelemetryStatusReport(OadrReport):
             deviceID = map_rid_device_id.get_or_create_deviceID(rID)
             device = Device.get_or_create(report._id, deviceID, load, spaces, reportSubject, reportDataSource, status_item)
             device.save()
+        #notify restfulAPI that new DERS are available
+        requests.get("{}/{}/{}".format(NOTIFICATION_REST,'1/notify/der_installed',report._id))
 
 
     def create(self, *args, **kwargs):

@@ -63,8 +63,12 @@ class VEN(MongoDB):
         self.oadr_xml_signature = oadr_xml_signature
         self.oadr_ven_name = oadr_ven_name
         self.oadr_http_pull_model = oadr_http_pull_model
-        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
-        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        try:
+            self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        except:
+            self.account_id = None
+            self.aggregator_id = None
 
     def remove_reports(self):
         ven_reports = MetadataReports.find({MetadataReports.ven(): self._id})
@@ -130,8 +134,12 @@ class DataPoint(MongoDB):
         self.rid = rid
         self.report_subject = report_subject
         self.report_data_source = report_data_source
-        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
-        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        try:
+            self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        except:
+            self.account_id = None
+            self.aggregator_id = None
         self.spaces = spaces
 
     @staticmethod
@@ -177,8 +185,12 @@ class Device(MongoDB):
         self.status = status_item
         self.report = report
         self.rid = rid
-        self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
-        self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        try:
+            self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        except:
+            self.account_id = None
+            self.aggregator_id = None
         self.availability = ""
         self.spaces = spaces
         self.report_subject = report_subject

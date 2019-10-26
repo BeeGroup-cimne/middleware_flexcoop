@@ -58,9 +58,12 @@ def get_data_model(element):
             self.accuracy = accuracy
             self.data_quality = dataQuality
             self.value = value
-            self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
-            self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
-
+            try:
+                self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+                self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+            except:
+                self.account_id = None
+                self.aggregator_id = None
     return ReportDataModel
 
 
