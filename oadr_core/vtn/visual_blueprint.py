@@ -1,6 +1,8 @@
+from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for
 
 from oadr_core.vtn.server_blueprint import send_message
+from oadr_core.vtn.services.ei_event_service import OadrDistributeEvent
 from project_customization.flexcoop.models import VEN, MetadataReports, oadrPollQueue, DataPoint, Event, EventSignal, \
     EventInterval, Device, map_rid_device_id
 from oadr_core.vtn.services.ei_register_party_service import OadrCancelPartyRegistration, OadrRequestReregistration
@@ -29,7 +31,7 @@ def view_ven_delete(venID):
     ven = VEN.find_one({VEN.ven_id(): venID})
     cancel_registration = OadrCancelPartyRegistration()
     params = {
-        "registrationID": ven.registrationID,
+        "registrationID": ven.registration_id,
         "requestID": "0"
     }
     response = send_message(cancel_registration, ven, params)
@@ -147,27 +149,23 @@ def create_vtn_events():
         print(request.form)
         if form.validate():
             data = request.form
-            event = Event(data['eventID'], data['priority'], data['marketContext'], data['eventStatus'], True if 'testEvent' in data and data['testEvent']=="y" else False ,data['vtnComment'],"", data['dtstart'], data['duration'],data['tolerance'], data['eiNotification'], data['eiRampUp'], data['eiRecovery'])
+            description_dt_start = datetime.strptime(data['description-dtstart'], "%Y-%m-%d %H:%M:%S") if data['description-dtstart'] else None
+            interval_dt_start = datetime.strptime(data['interval-dtstart'], "%Y-%m-%d %H:%M:%S") if data['interval-dtstart'] else None
+            description_testEvent = True if 'description-testEvent' in data and data['description-testEvent']=="y" else False
+
+            event = Event(data['description-priority'], data['description-marketContext'], data['description-eventStatus'],
+                          description_testEvent, data['description-vtnComment'], description_dt_start,
+                          data['description-duration'], data['description-tolerance'], data['description-eiNotification'],
+                          data['description-eiRampUp'], data['description-eiRecovery'], data['description-target'],  data['description-responseRequired'])
+            print(event)
             event.save()
+            signal = EventSignal(event._id, data['signal-target'], data['signal-signalID'], data['signal-signalType'], data['signal-signalName'], data['signal-currentValue'])
+            signal.save()
+            interval = EventInterval(signal._id, interval_dt_start, data['interval-duration'], data['interval-uid'], data['interval-value'])
+            interval.save()
+            send_message(OadrDistributeEvent(), VEN.find_one({VEN.ven_id():data['ven']}), {'event_list':[event], "requestID": "1"})
             return redirect(url_for("visual.view_vtn_events"))
         else:
             print("A")
     return render_template("web/events/create_events.html", form=form)
 
-@web.route("/vtn_create_event_signal/<eventID>",  methods=['GET', 'POST'])
-def create_vtn_event_signals(eventID):
-    form=EventSignalForm()
-    if request.method=="POST":
-        form = EventSignalForm(request.form)
-        print(request.form)
-        if form.validate():
-            data = request.form
-            event = Event.find_one({Event.event_id():eventID})
-            signal = EventSignal(event._id, data['signalID'], data['signalType'], data['signalName'], "", "")
-            signal.save()
-            interval = EventInterval(signal._id, data['intervals-0-uid'], data['intervals-0-dtstart'], data['intervals-0-duration'], data['intervals-0-signalPayload'])
-            interval.save()
-            return redirect(url_for("visual.view_vtn_events"))
-        # else:
-        #     print("A")
-    return render_template("web/events/create_events.html", form=form)

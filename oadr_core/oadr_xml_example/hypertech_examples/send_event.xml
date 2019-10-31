@@ -1,14 +1,13 @@
 <ns:oadrDistributeEvent ns1:schemaVersion="token" xmlns:ns="http://openadr.org/oadr-2.0b/2012/07" xmlns:ns1="http://docs.oasis-open.org/ns/energyinterop/201110" xmlns:pay="http://docs.oasis-open.org/ns/energyinterop/201110/payloads" xmlns:ns2="http://docs.oasis-open.org/ns/emix/2011/06" xmlns:urn="urn:ietf:params:xml:ns:icalendar-2.0" xmlns:urn1="urn:ietf:params:xml:ns:icalendar-2.0:stream" xmlns:pow="http://docs.oasis-open.org/ns/emix/2011/06/power" xmlns:ns3="http://www.opengis.net/gml/3.2">
   <pay:requestID>1</pay:requestID>
   <ns1:vtnID>1</ns1:vtnID>
-  <!--Zero or more repetitions:-->
   <ns:oadrEvent>
     <ns1:eiEvent>
       <ns1:eventDescriptor>
         <ns1:eventID>1</ns1:eventID>
         <ns1:modificationNumber>1</ns1:modificationNumber>
         <!--Optional:-->
-        <ns1:modificationDateTime>2007-10-26T08:36:28</ns1:modificationDateTime>
+        <ns1:modificationDateTime>2019-10-26T08:36:28</ns1:modificationDateTime>
         <!--Optional:-->
         <ns1:modificationReason>string</ns1:modificationReason>
         <!--Optional:-->

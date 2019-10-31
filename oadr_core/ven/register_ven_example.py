@@ -73,7 +73,7 @@ def send_metadata_report(xml_file):
     schema_val(response)
     pretty_print_xml(response)
 
-def send_test_report_status(xml_file):
+def send_test_report(xml_file):
     # requestID = "0"  # nobody requested this report
     # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
     #             "duration": "P3Y6M4DT12H30M5S",
@@ -100,21 +100,12 @@ def send_test_report_status(xml_file):
     schema_val(response)
     pretty_print_xml(response)
 
-def send_test_report_usage(xml_file):
-    # requestID = "0"  # nobody requested this report
-    # reports = [{"reportName": "METADATA_TELEMETRY_USAGE", "reportSpecifierID": "RP_223", "eiReportID": "ID_222",
-    #             "duration": "P3Y6M4DT12H30M5S",
-    #             "reportRequestID": "0", "createdDateTime": datetime.utcnow().isoformat(),
-    #             "data_points": [{"rID": "m3", "reportType": "usage", "readingType": "Direct Read",
-    #                              "oadrMinPeriod": "P3Y6M4DT12H30M5S",
-    #                              "oadrMaxPeriod": "P3Y6M4DT12H30M5S", "oadrOnChange": False,
-    #                              "market_context": "the market context"}]
-    #             }]
-    # content = oadrRegisterReport(requestID, requestID, venID, reports)
 
+
+def send_poll(xml_file):
     content = etree.parse(xml_file, xmlparser)
     if prod:
-        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), cert=(
+        r = requests.post(MIDDLEWARE_URL + "OadrPoll", data=etree.tostring(content), cert=(
             '/Users/eloigabal/Desktop/flexcoop_certs/client.crt',
             '/Users/eloigabal/Desktop/flexcoop_certs/key.key'),
                           verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
@@ -122,20 +113,21 @@ def send_test_report_usage(xml_file):
         headers = {"X-Ssl-Cert": open(
             '/Users/eloigabal/osb/example.crt').read().replace(
             "\n", "&")}
-        r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
-
+        r = requests.post(MIDDLEWARE_URL + "OadrPoll", data=etree.tostring(content), headers=headers, verify=False)
 
     response = etree.fromstring(r.text)
     schema_val(response)
     pretty_print_xml(response)
+    return response
 
 
 venID, registrationID = register_ven("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/register_ven.xml")
-send_metadata_report("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/register_reports.xml")
+send_metadata_report("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/register_reports_test.xml")
 
-send_test_report_status("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_status.xml")
-send_test_report_usage("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_usage.xml")
+send_test_report("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_status.xml")
+send_test_report("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_usage.xml")
 
+resp = send_poll("/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/oadr_xml_example/hypertech_examples/send_poll.xml")
 
 #     content = oadrPoll(venID)
 #     r = requests.post(MIDDLEWARE_URL + "OadrPoll", data=etree.tostring(oadrPayload(content)), verify=False)

@@ -4,33 +4,56 @@
 {% block content %}
     <form action="" method="post">
         {{ form.csrf }}
-        {% for k,f in form._fields.items() %}
-            {% if k in ['dtstart']  %}
-                <div class="row">
-                    <div class='col-sm-6'>
-                        <span>{{ f.label }}{% if f.flags.required %}*{% endif %}
-                        <div class="form-group">
-                            <div id="datetimepicker_k" class="input-append date">
-                                {{ f }}
-                                <span class="add-on">
-                                    <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
-                                </span>
+
+        {% for k,f in form.data.items() %}
+            {% if k in ['description', 'signal', 'interval'] %}
+                {% for k1, f1 in form[k].data.items()%}
+                    {% if k1 in ['dtstart']  %}
+                    <div class="row">
+                        <div class='col-sm-6'>
+                            <span>{{ form[k][k1].label }}{% if form[k][k1].flags.required %}*{% endif %}
+                            <div class="form-group">
+                                <div id="datetimepicker_{{ k }}_{{ k1 }}" class="input-append date">
+                                    {{ form[k][k1] }}
+                                    <span class="add-on">
+                                        <i data-time-icon="icon-time" data-date-icon="icon-calendar"></i>
+                                    </span>
+                                </div>
                             </div>
+                             {% if form[k][k1].errors %}
+                            {% for error in form[k][k1].errors %}
+                            {{ error }}
+                            {% endfor %}
+                            {% endif %}
                         </div>
+                        <script type="text/javascript">
+                           $('#datetimepicker_{{ k }}_{{ k1 }}').datetimepicker({
+                                format: "yyyy-MM-dd hh:mm:ss"
+                           });
+                        </script>
                     </div>
-                    <script type="text/javascript">
-                       $('#datetimepicker_k').datetimepicker({
-                            format: "yyyy-MM-dd hh:mm:ss"
-                       });
-                    </script>
-                </div>
+                    {% else %}
+                        <div class="row">
+                            <div class="input text"><span>{{ k1 }}{% if form[k][k1].flags.required %}*{% endif %}</span> {{ form[k][k1] }}</div>
+                            {% if form[k][k1].errors %}
+                            {% for error in form[k][k1].errors %}
+                            {{ error }}
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             {% else %}
                 <div class="row">
-                    <div class="input text"><span>{{ k }}{% if f.flags.required %}*{% endif %}</span> {{ f }}</div>
+                    <div class="input text"><span>{{ k }}{% if form[k].flags.required %}*{% endif %}</span> {{ form[k] }}</div>
+                    {% if form[k].errors %}
+                        {% for error in form[k].errors %}
+                            {{ error }}
+                        {% endfor %}
+                    {% endif %}
                 </div>
             {% endif %}
         {% endfor %}
-
         <div class="input submit"><input type="submit" value="Submit"></div>
     </form>
 {% endblock %}

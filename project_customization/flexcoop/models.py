@@ -234,6 +234,7 @@ class ReportsToSend(MongoDB):
         self.related_data_points = related_data_points
         self.canceled = canceled
 
+
 class Event(MongoDB):
     event_id = AnyField()
     modification_number = AnyField()
@@ -251,12 +252,13 @@ class Event(MongoDB):
     ei_notification = AnyField()
     ei_ramp_up = AnyField()
     ei_recovery = AnyField()
-    responseRequired = AnyField()
+    target = AnyField()
+    response_required = AnyField()
     __collectionname__ = "events"
 
-    def __init__(self, eventID, priority, marketContext, eventStatus, testEvent, vtnComment, dtstart,
-                 duration, tolerance, eiNotification, eiRampUp, eiRecovery, responseRequired, createdDateTime=datetime.utcnow()):
-        self.event_id = eventID
+    def __init__(self, priority, marketContext, eventStatus, testEvent, vtnComment, dtstart,
+                 duration, tolerance, eiNotification, eiRampUp, eiRecovery, target, responseRequired, createdDateTime=datetime.utcnow()):
+        self.event_id = generate_UUID()
         self.modification_number = str(0)
         self.priority = priority
         self.market_context = marketContext
@@ -270,8 +272,10 @@ class Event(MongoDB):
         self.ei_notification = eiNotification
         self.ei_ramp_up = eiRampUp
         self.ei_recovery = eiRecovery
-        self.responseRequired = responseRequired
+        self.target = target
+        self.response_required = responseRequired
         self._modification_fields = []
+        self.modification_date_time = None
 
     def __setattr__(self, key, value):
         if '_id' in self.__dict__:
@@ -354,14 +358,14 @@ class EventInterval(MongoDB):
     dtstart = AnyField()
     duration = AnyField()
     uid = AnyField()
-    signal_payload = AnyField()
+    value = AnyField()
 
-    def __init__(self, signal, dtstart, duration, uid, signal_payload):
+    def __init__(self, signal, dtstart, duration, uid, value):
         self.signal = signal
         self.dtstart = dtstart
         self.duration = duration
         self.uid = uid
-        self.signal_payload = signal_payload
+        self.value = value
         self._modification_fields = []
 
     def __setattr__(self, key, value):

@@ -4,25 +4,33 @@ from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, ELEMENTS, 
 
 
 def ei_event_descriptor(event):
-    ei_event_descriptor = ELEMENTS['ei'].eventDescriptor(
-        ELEMENTS['ei'].eventID(event.eventID),
-        ELEMENTS['ei'].modificationNumber(event.modificationNumber),
-        ELEMENTS['ei'].modificationDateTime(event.modificationDateTime),
-        ELEMENTS['ei'].modificationReason(event.modificationReason),
-        ELEMENTS['ei'].priority(event.priority),
+    ei_event_descriptor = ELEMENTS['ei'].eventDescriptor()
+    ei_event_descriptor.append(ELEMENTS['ei'].eventID(event.event_id))
+    ei_event_descriptor.append(ELEMENTS['ei'].modificationNumber(event.modification_number))
+    if event.modification_date_time:
+        ei_event_descriptor.append(event.modification_date_time.strftime("%Y-%m-%dT%H:%M:%S"))
+    if event.modification_reason:
+        ei_event_descriptor.append(ELEMENTS['ei'].modificationReason(event.modification_reason))
+    if event.priority:
+        ei_event_descriptor.append(ELEMENTS['ei'].priority(event.priority))
+    ei_event_descriptor.append(
         ELEMENTS['ei'].eiMarketContext(
-            ELEMENTS['emix'].marketContext(event.marketContext)
-        ),
-        ELEMENTS['ei'].createdDateTime(event.createdDateTime),
-        ELEMENTS['ei'].eventStatus(event.eventStatus),
-        ELEMENTS['ei'].testEvent(event.testEvent),
-        ELEMENTS['ei'].vtnComment(event.vtnComment)
+            ELEMENTS['emix'].marketContext(event.market_context)
+        )
     )
+
+    ei_event_descriptor.append(ELEMENTS['ei'].createdDateTime(event.created_date_time.strftime("%Y-%m-%dT%H:%M:%S")))
+    ei_event_descriptor.append(ELEMENTS['ei'].eventStatus(event.event_status))
+    if event.test_event:
+        ei_event_descriptor.append(ELEMENTS['ei'].testEvent('true' if event.test_event else 'false'))
+    if event.vtn_comment:
+        ei_event_descriptor.append(ELEMENTS['ei'].vtnComment(event.vtn_comment))
+
     return ei_event_descriptor
 
 def ei_active_period(event):
     date_time = ELEMENTS['xcal']("date-time")
-    date_time.text = event.dtstart
+    date_time.text = event.dtstart.strftime("%Y-%m-%dT%H:%M:%S" if event.dtstart else '')
     dtstart = ELEMENTS['xcal'].dtstart(date_time)
 
     duration = ELEMENTS['xcal'].duration(
@@ -38,26 +46,26 @@ def ei_active_period(event):
     else:
         tolerance = None
 
-    if event.eiNotification:
+    if event.ei_notification:
         einotification = ELEMENTS['ei']("x-eiNotification")
         einotification.append(
-            ELEMENTS['xcal'].duration(event.eiNotification)
+            ELEMENTS['xcal'].duration(event.ei_notification)
         )
     else:
         einotification = None
 
-    if event.eiRampUp:
+    if event.ei_ramp_up:
         eirampUp = ELEMENTS['ei']("x-eiRampUp")
         eirampUp.append(
-            ELEMENTS['xcal'].duration(event.eiRampUp)
+            ELEMENTS['xcal'].duration(event.ei_ramp_up)
         )
     else:
         eirampUp = None
 
-    if event.eiRecovery:
+    if event.ei_recovery:
         eiRecovery = ELEMENTS['ei']("x-eiRecovery")
         eiRecovery.append(
-            ELEMENTS['xcal'].duration(event.eiRecovery)
+            ELEMENTS['xcal'].duration(event.ei_recovery)
         )
     else:
         eiRecovery = None
@@ -89,7 +97,7 @@ def ei_event_signals(event):
         for interval in signal.signal_intervals():
             if interval.dtstart:
                 dt = ELEMENTS['xcal']("date-time")
-                dt.text = interval.dtstart
+                dt.text = interval.dtstart.strftime("%Y-%m-%dT%H:%M:%S" if interval.dtstart else '')
                 dtstart = ELEMENTS['xcal'].dtstart(dt)
             else:
                 dtstart = None
@@ -131,9 +139,9 @@ def ei_event_signals(event):
         sig.append(intervals_element)
         if eiTarget:
             sig.append(eiTarget)
-        sig.append(ELEMENTS['ei'].signalName(signal.signalName))
-        sig.append(ELEMENTS['ei'].signalType(signal.signalType))
-        sig.append(ELEMENTS['ei'].signalID(signal.signalID))
+        sig.append(ELEMENTS['ei'].signalName(signal.signal_name))
+        sig.append(ELEMENTS['ei'].signalType(signal.signal_type))
+        sig.append(ELEMENTS['ei'].signalID(signal.signal_id))
         signals.append(sig)
     return signals
 
@@ -157,19 +165,20 @@ def oadrEvent(event):
             ei_event_signals(event),
             ei_target(event.target)
         ),
-        ELEMENTS['oadr'].oadrResponseRequired(event.responseRequired)
+        ELEMENTS['oadr'].oadrResponseRequired(event.response_required)
     )
-
-    event_element.append()
     return event_element
 
 
-def oadrDistributeEvent(response_code, response_description, response_requestId, requestID, vtnID, oadrEventsList):
+def oadrDistributeEvent(response_code, response_description, response_requestId, requestID, vtnID, events):
     root = ElementMaker(namespace=NAMESPACES['oadr'], nsmap=NAMESPACES)
     distribute_event_element = root.oadrDistributeEvent()
     if response_code:
         distribute_event_element.append(eiResponse(response_code, response_description, response_requestId))
     distribute_event_element.append(ELEMENTS['pyld'].requestID(requestID))
     distribute_event_element.append(ELEMENTS['ei'].vtnID(vtnID))
+    oadrEventsList = []
+    for event in events:
+        oadrEventsList.append(oadrEvent(event))
     distribute_event_element.append(*oadrEventsList)
     return distribute_event_element
