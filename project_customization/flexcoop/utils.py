@@ -1,6 +1,8 @@
 import re
 import uuid
+import requests
 
+from settings import OAUTH_PROVIDERS, CLIENT, SECRET, CLIENT_OAUTH
 
 status_mapping = {
     "status": "operationState",
@@ -34,3 +36,13 @@ def convert_camel_case(name):
     # We capitalize the first letter of each component except the first one
     # with the 'title' method and join them together.
     return ''.join(x.title() for x in components)
+
+def get_middleware_token():
+    client = CLIENT
+    secret = SECRET
+    login = {'grant_type': 'client_credentials', 'client_id': client, 'client_secret': secret}
+    response = requests.post("{}/token".format(OAUTH_PROVIDERS[CLIENT_OAUTH]['url']), data=login, verify=OAUTH_PROVIDERS[CLIENT_OAUTH]['cert'])
+    if response.ok:
+        return response.json()['access_token']
+    else:
+        raise Exception("Oauth client not found")

@@ -31,7 +31,7 @@ def register_ven(xml_file):
                           verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
     else:
         headers = {"X-Ssl-Cert": open(
-            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            '/Users/eloigabal/osb/example.crt').read().replace(
             "\n", "&")}
         r = requests.post(MIDDLEWARE_URL + "EiRegisterParty", data=etree.tostring(content), headers=headers, verify=False)
 
@@ -65,7 +65,7 @@ def send_metadata_report(xml_file):
                           verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
     else:
         headers = {"X-Ssl-Cert": open(
-            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            '/Users/eloigabal/osb/example.crt').read().replace(
             "\n", "&")}
         r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
 
@@ -92,7 +92,7 @@ def send_test_report(xml_file):
                           verify="/Users/eloigabal/Desktop/flexcoop_certs/middleware.platform.flexcoop.eu-bundle.cert.pem")
     else:
         headers = {"X-Ssl-Cert": open(
-            '/Users/eloigabal/Developement/CIMNE/Flexcoop/middleware_openADR/oadr_core/ven/client.crt').read().replace(
+            '/Users/eloigabal/osb/example.crt').read().replace(
             "\n", "&")}
         r = requests.post(MIDDLEWARE_URL + "EiReport", data=etree.tostring(content), headers=headers, verify=False)
 

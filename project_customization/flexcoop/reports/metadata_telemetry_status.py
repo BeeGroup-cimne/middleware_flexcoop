@@ -3,9 +3,9 @@ from datetime import datetime
 
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
-from project_customization.flexcoop.models import MetadataReports, DataPoint, Device, map_rid_device_id
-from project_customization.flexcoop.utils import parse_rid, status_mapping
-from settings import NOTIFICATION_REST
+from project_customization.flexcoop.models import MetadataReports, Device, map_rid_device_id
+from project_customization.flexcoop.utils import parse_rid, status_mapping, get_middleware_token
+from settings import NOTIFICATION_REST_URL, NOTIFICATION_REST_CERT
 
 
 class MetadataTelemetryStatusReport(OadrReport):
@@ -65,7 +65,9 @@ class MetadataTelemetryStatusReport(OadrReport):
             device = Device.get_or_create(report._id, deviceID, load, spaces, reportSubject, reportDataSource, status_item)
             device.save()
         #notify restfulAPI that new DERS are available
-        requests.get("{}/{}/{}".format(NOTIFICATION_REST,'1/notify/der_installed',report._id))
+        token = get_middleware_token()
+        headers = {'Authorization': token}
+        requests.get("{}/{}/{}".format(NOTIFICATION_REST_URL,'1/notify/der_installed', report._id),  headers=headers, verify=NOTIFICATION_REST_CERT)
 
 
     def create(self, *args, **kwargs):
