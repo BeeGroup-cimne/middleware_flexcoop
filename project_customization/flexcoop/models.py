@@ -254,9 +254,10 @@ class Event(MongoDB):
     ei_recovery = AnyField()
     target = AnyField()
     response_required = AnyField()
+    ven_id = AnyField()
     __collectionname__ = "events"
 
-    def __init__(self, priority, marketContext, eventStatus, testEvent, vtnComment, dtstart,
+    def __init__(self, ven_id, priority, marketContext, eventStatus, testEvent, vtnComment, dtstart,
                  duration, tolerance, eiNotification, eiRampUp, eiRecovery, target, responseRequired, createdDateTime=datetime.utcnow()):
         self.event_id = generate_UUID()
         self.modification_number = str(0)
@@ -276,6 +277,7 @@ class Event(MongoDB):
         self.response_required = responseRequired
         self._modification_fields = []
         self.modification_date_time = None
+        self.ven_id = ven_id
 
     def __setattr__(self, key, value):
         if '_id' in self.__dict__:

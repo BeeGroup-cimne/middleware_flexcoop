@@ -153,7 +153,7 @@ def create_vtn_events():
             interval_dt_start = datetime.strptime(data['interval-dtstart'], "%Y-%m-%d %H:%M:%S") if data['interval-dtstart'] else None
             description_testEvent = True if 'description-testEvent' in data and data['description-testEvent']=="y" else False
 
-            event = Event(data['description-priority'], data['description-marketContext'], data['description-eventStatus'],
+            event = Event(data['ven'], data['description-priority'], data['description-marketContext'], data['description-eventStatus'],
                           description_testEvent, data['description-vtnComment'], description_dt_start,
                           data['description-duration'], data['description-tolerance'], data['description-eiNotification'],
                           data['description-eiRampUp'], data['description-eiRecovery'], data['description-target'],  data['description-responseRequired'])

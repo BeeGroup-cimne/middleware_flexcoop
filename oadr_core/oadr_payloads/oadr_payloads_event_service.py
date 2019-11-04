@@ -177,8 +177,7 @@ def oadrDistributeEvent(response_code, response_description, response_requestId,
         distribute_event_element.append(eiResponse(response_code, response_description, response_requestId))
     distribute_event_element.append(ELEMENTS['pyld'].requestID(requestID))
     distribute_event_element.append(ELEMENTS['ei'].vtnID(vtnID))
-    oadrEventsList = []
     for event in events:
-        oadrEventsList.append(oadrEvent(event))
-    distribute_event_element.append(*oadrEventsList)
+        oadrEvents = oadrEvent(event)
+        distribute_event_element.append(oadrEvents)
     return distribute_event_element
