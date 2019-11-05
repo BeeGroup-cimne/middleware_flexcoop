@@ -306,6 +306,11 @@ class Event(MongoDB):
         self._modification_fields = []
         super(Event, self).save()
 
+    def delete(self):
+        for es in self.event_signals():
+            es.delete()
+        super(Event, self).delete()
+
     def event_signals(self):
         return EventSignal.find({EventSignal.event(): self._id})
 
@@ -349,6 +354,11 @@ class EventSignal(MongoDB):
                     inc = True
             self.__dict__.__delitem__(_key)
         super(EventSignal, self).save()
+
+    def delete(self):
+        for esi in self.signal_intervals():
+            esi.delete()
+        super(EventSignal, self).delete()
 
     def signal_intervals(self):
         return EventInterval.find({EventInterval.signal(): self._id})

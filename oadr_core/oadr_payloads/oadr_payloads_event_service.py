@@ -117,7 +117,7 @@ def ei_event_signals(event):
                 uid = None
             pay = ELEMENTS['ei'].signalPayload(
                 ELEMENTS['ei'].payloadFloat(
-                    ELEMENTS['ei'].value(interval.value)
+                    ELEMENTS['ei'].value(str(interval.value))
                 )
             )
             int = ELEMENTS['ei'].interval()

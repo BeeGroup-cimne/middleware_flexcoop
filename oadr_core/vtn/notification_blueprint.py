@@ -31,6 +31,6 @@ def notification_events(ven_id):
         return jsonify({"notification": "No events"})
     send_message(OadrDistributeEvent(), VEN.find_one({VEN.ven_id(): ven_id}),
                  {'event_list': events, "requestID": "1"})
-    # for e in events:
-    #     e.delete()
+    for e in events:
+        e.delete()
     return jsonify({"notification": "OK"})
