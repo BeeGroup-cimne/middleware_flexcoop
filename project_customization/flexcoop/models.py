@@ -82,7 +82,8 @@ class VEN(MongoDB):
                 d.delete()
             report.delete()
 
-    def get_ven(self, ven_id):
+    @staticmethod
+    def get_ven(ven_id):
         try:
             ven = VEN.find_one({VEN.ven_id(): ven_id})
             if request.cert['CN'] == ven.account_id and request.cert['O'] == ven.aggregator_id:
