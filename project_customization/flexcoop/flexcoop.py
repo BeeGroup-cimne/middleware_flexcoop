@@ -34,7 +34,7 @@ class FlexcoopCustomization():
         # Check for correct ven and registrationID
         if not registrationID:
             if venID:
-                ven = VEN.find_one({VEN.ven_id(): venID})
+                ven = VEN.get_ven(venID)
                 if ven:
                     raise InvalidVenException()
 
@@ -42,7 +42,8 @@ class FlexcoopCustomization():
                       oadrReportOnly, oadrXmlSignature, oadrVenName, oadrHttpPullModel)
             ven.registration_id = str(ven.ven_id)
         else:
-            ven = VEN.find_one({VEN.registration_id():registrationID})
+            tven = VEN.find_one({VEN.registration_id():registrationID})
+            ven = VEN.get_ven(tven.ven_id)
             if not ven or str(ven.ven_id) != venID:
                 raise InvalidVenException()
 
@@ -60,7 +61,7 @@ class FlexcoopCustomization():
 
     def on_OadrCancelPartyRegistration_recieved(self, requestID, registrationID, venID):
 
-        ven = VEN.find_one({VEN.registration_id(): registrationID})
+        ven = VEN.get_ven(registrationID)
         if str(ven.venID) != venID:
             raise InvalidVenException()
         ven.remove_reports()
@@ -119,7 +120,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrRegisterReport_recieved(self, requestID, venID, reports_payloads):
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
 
 
         if ven is None:
@@ -161,7 +162,7 @@ class FlexcoopCustomization():
 
     def on_OadrRegisterReport_response(self, response_code, response_description, venID, oadrReportRequest):
 
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
         if not ven:
             raise InvalidVenException
 
@@ -179,7 +180,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrCreateReport_recieved(self, venID, reportRequests):
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
         # respond
         if ven is None:
             raise InvalidVenException
@@ -198,14 +199,14 @@ class FlexcoopCustomization():
         pass
 
     def on_OadrCreateReport_response(self, venID, pending_reports):
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
         # respond
         if ven is None:
             raise InvalidVenException
         return self.created_report(pending_reports)
 
     def on_OadrCreatedReport_recieved(self, venID, pending_reports):
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
         # respond
         if ven is None:
             raise InvalidVenException
@@ -227,7 +228,7 @@ class FlexcoopCustomization():
 
 
     def on_OadrUpdateReport_recieved(self, venID, reports):
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
 
         if ven is None:
             raise InvalidVenException
@@ -271,7 +272,7 @@ class FlexcoopCustomization():
 
     def on_OadrCancelReport_recieved(self, venID, cancel_reports, report_to_follow):
         # respond
-        ven = VEN.find_one({VEN.ven_id(): venID})
+        ven = VEN.get_ven(venID)
         if ven is None:
             raise InvalidVenException
 

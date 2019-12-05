@@ -5,6 +5,7 @@ from mongo_orm import MongoDB, AnyField
 from datetime import datetime
 
 #Cache of OADR POLL messages. It is done in memory but if too many messages are in the queue it can be moved to the DB
+from oadr_core.exceptions import InvalidVenException
 from project_customization.flexcoop.utils import generate_UUID, parse_rid, get_id_from_rid
 
 oadrPollQueue = {}
@@ -80,6 +81,16 @@ class VEN(MongoDB):
             for d in devices:
                 d.delete()
             report.delete()
+
+    def get_ven(self, ven_id):
+        try:
+            ven = VEN.find_one({VEN.ven_id(): ven_id})
+            if request.cert['CN'] == ven.account_id and request.cert['O'] == ven.aggregator_id:
+                return ven
+            raise InvalidVenException()
+        except:
+            raise InvalidVenException()
+
 
     def __repr__(self):
         return '<VEN {}>'.format(self.oadr_ven_name)
