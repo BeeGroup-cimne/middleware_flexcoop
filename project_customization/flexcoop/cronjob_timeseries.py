@@ -156,9 +156,10 @@ def clean_data():
 
 if __name__ == "__main__":
     import sys
-    if sys.argv[1] == "clean":
+    sys.path.extend([sys.argv[1]])
+    if sys.argv[2] == "clean":
         clean_data()
-    elif sys.argv[1] == "delete":
+    elif sys.argv[2] == "delete":
         delete_raw_data()
     else:
         print("error")
