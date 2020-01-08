@@ -1,4 +1,5 @@
 from mongo_orm import MongoDB, AnyField
+from project_customization.flexcoop.models import DataPoint
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
 import pandas as pd
 """We define the cronjobs to be executed to deal with the raw data recieved"""
@@ -70,12 +71,12 @@ class meter(timeseries):
 
 
 timeseries_mapping = {
-    "ambient_temperature": { "class": indoor_sensing, "field": "temperature", "operation": "AVG"},
-    "sensor_temperature": { "class": indoor_sensing, "field": "temperature" ,"operation": "AVG"},
-    "temperature": { "class": indoor_sensing, "field": "temperature", "operation": "AVG"},
-    "lux": { "class": indoor_sensing, "field": "lux", "operation": "AVG"},
-    "sensor_luminance": { "class": indoor_sensing, "field": "lux", "operation": "AVG"},
-    "sensor_relhumidity": { "class": indoor_sensing, "field": "relhumidity", "operation": "AVG"},
+    "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG"},
+    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG"},
+    "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG"},
+    "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG"},
+    "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG"},
+    "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG"},
     "humidity": { "class": indoor_sensing, "field": "relhumidity", "operation": "AVG"},
     "airquality": { "class": indoor_sensing, "field": "airquality", "operation": "FIRST"},
     "tvoc": { "class": indoor_sensing, "field": "tvoc","operation": "MAX"},
@@ -98,19 +99,34 @@ def aggregate_timeseries(freq):
         df = pd.DataFrame.from_records(data)
         print(key)
         for device, data_device in df.groupby("device_id"):
+            # get the data_point information
+            point = DataPoint.find_one({"device_id": device})
+            point_info = point['reporting_items'][key]
+            reading_type = point_info['reading_type']
             data_device.index = pd.to_datetime(data_device.dtstart)
             account_id = data_device.account_id.unique()[0]
             aggregator_id = data_device.aggregator_id.unique()[0]
             if value['operation'] == "AVG":
                 data_device.value = pd.to_numeric(data_device.value)
+                if reading_type == "Direct Read":  # accumulated
+                    data_device.value = data_device.value.diff()
                 data_clean = data_device[['value']].resample("1s").mean().interpolate().resample(freq).mean()
             elif value['operation'] == "FIRST":
+                try:
+                    if reading_type == "Direct Read":  # accumulated
+                        data_device.value = data_device.value.diff()
+                except:
+                    pass
                 data_clean = data_device[['value']].resample(freq).first()
             elif value['operation'] == "MAX":
                 data_device.value = pd.to_numeric(data_device.value)
+                if reading_type == "Direct Read":  # accumulated
+                    data_device.value = data_device.value.diff()
                 data_clean = data_device[['value']].resample(freq).max()
             elif value['operation'] == "SUM":
                 data_device.value = pd.to_numeric(data_device.value)
+                if reading_type == "Direct Read":  # accumulated
+                    data_device.value = data_device.value.diff()
                 data_clean = data_device[['value']].cumsum().resample("1s").max().interpolate().diff().resample(freq).sum()
             else:
                 data_clean = pd.DataFrame()

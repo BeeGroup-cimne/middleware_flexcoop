@@ -52,25 +52,26 @@ def openADR_VTN_service(service):
     # read data as XML
     payload = etree.fromstring(request.get_data())
     # identify which is the message recieved:
-    #print(request.headers)
+    app.logger.debug(request.headers)
     cert_string = request.headers['X-Ssl-Cert'].replace("&", "\n").replace("\t","")
-    print(repr(cert_string))
+    app.logger.debug("request revieved to {}".format(service))
+    app.logger.debug(repr(cert_string))
     cert_obj = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
     if cert_obj.has_expired():
         abort(Response("Invalid certificate"), 403)
     request.cert = {k.decode("utf-8"):v.decode("utf-8") for k,v in cert_obj.get_subject().get_components()}
-    print("accepted cert")
+    app.logger.debug("accepted cert")
     # TODO: Validate signed object
 
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
-    print(message)
+    app.logger.debug(message)
     responder = None
     try:
         messages = OADR_MESSAGES_ENDPOINTS[service]
         try:
             responder, events = messages[message]
-            print("going to respond the request")
+            app.logger.debug("going to respond the request")
             response = etree.tostring(responder.respond(payload))
             if 'recieve' in events:
                 app.response_callback.append((events['recieve'], response))
@@ -85,7 +86,7 @@ def openADR_VTN_service(service):
     except NotImplementedError as e:
         abort(Response("The service {} is not implemented yet".format(message), 501))
     except Exception as e:
-        print(e)
+        app.logger.info(e)
         abort(Response(e, 500))
 
 
