@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
@@ -136,4 +138,27 @@ def aggregate_timeseries(freq):
                 point = value['class'](account_id, aggregator_id, device, ts, **params)
                 point.save()
 
-aggregate_timeseries("15Min")
+# Call this function everyday at 00:00
+def delete_raw_data():
+    now = datetime.utcnow() - timedelta(minutes=15)
+    for key, value in timeseries_mapping.items():
+        raw_model = get_data_model(key)
+        data = raw_model.find({})
+        for d in data:
+            ts = datetime.fromisoformat(d.dtstart)
+            if ts < now:
+                d.delete()
+
+
+# Call this function every 15 min
+def clean_data():
+    aggregate_timeseries("15Min")
+
+if __name__ == "__main__":
+    import sys
+    if sys.argv[1] == "clean":
+        clean_data()
+    elif sys.argv[1] == "delete":
+        delete_raw_data()
+    else:
+        print("error")
