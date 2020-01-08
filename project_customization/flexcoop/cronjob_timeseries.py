@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-
+import sys
+sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
@@ -155,8 +156,6 @@ def clean_data():
     aggregate_timeseries("15Min")
 
 if __name__ == "__main__":
-    import sys
-    sys.path.extend([sys.argv[1]])
     if sys.argv[2] == "clean":
         clean_data()
     elif sys.argv[2] == "delete":
