@@ -146,7 +146,7 @@ def delete_raw_data():
         raw_model = get_data_model(key)
         data = raw_model.find({})
         for d in data:
-            ts = datetime.fromisoformat(d.dtstart)
+            ts = datetime.strptime(d.dtstart, "%Y-%m-%dT%H:%M:%S.%f")
             if ts < now:
                 d.delete()
 
