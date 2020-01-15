@@ -130,7 +130,7 @@ def aggregate_timeseries(freq):
                 data_device.value = pd.to_numeric(data_device.value)
                 if reading_type == "Direct Read":  # accumulated
                     data_device.value = data_device.value.diff()
-                data_clean = data_device[['value']].cumsum().resample("1s").max().interpolate().diff().resample(freq).sum()
+                data_clean = data_device[['value']].cumsum().resample("1s").mean().interpolate().resample(freq).mean().diff()
             else:
                 data_clean = pd.DataFrame()
 
