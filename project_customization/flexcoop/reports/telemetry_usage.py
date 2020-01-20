@@ -49,7 +49,7 @@ def get_data_model(element):
         aggregator_id = AnyField()
         device_class = AnyField()
 
-        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value, rid):
+        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value, device_class):
             self.device_id = deviceID
             self.report_id = report_id
             self.dtstart = dtstart
@@ -59,6 +59,7 @@ def get_data_model(element):
             self.accuracy = accuracy
             self.data_quality = dataQuality
             self.value = value
+            self.device_class = device_class
             try:
                 self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
                 self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
