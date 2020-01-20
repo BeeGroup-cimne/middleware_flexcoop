@@ -1,12 +1,49 @@
 import re
+from builtins import hasattr
+
+from flask import request
 
 from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id, Device
-from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid
+from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case
 
+
+def get_data_model(element):
+    class ReportDataModel(MongoDB):
+        "A telemetry usage report data"
+        __collectionname__ = element
+        report_id = AnyField()
+        dtstart = AnyField()
+        duration = AnyField()
+        uid = AnyField()
+        confidence = AnyField()
+        accuracy = AnyField()
+        data_quality = AnyField()
+        value = AnyField()
+        device_id = AnyField()
+        account_id = AnyField()
+        aggregator_id = AnyField()
+
+        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
+            self.device_id = deviceID
+            self.report_id = report_id
+            self.dtstart = dtstart
+            self.duration = duration
+            self.uid = uid
+            self.confidence = confidence
+            self.accuracy = accuracy
+            self.data_quality = dataQuality
+            self.value = value
+            try:
+                self.account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+                self.aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+            except:
+                self.account_id = None
+                self.aggregator_id = None
+    return ReportDataModel
 
 def get_report_models():
     class TelemetryStatusReportModel(MongoDB):
@@ -162,19 +199,19 @@ class TelemetryStatusReport(OadrReport):
 
             phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
 
-
-
-            # TMP = get_data_model(metric)
+            TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
-                phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
-                update_values = {}
                 if device:
                     device.status[status_mapping[metric]].update({"value": value_i})
                     device.save()
+                    data = TMP(mapping.device_id, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i,
+                               dataQuality_i, value_i)
+                    data.save()
                 else:
                     raise InvalidReportException("The device {} does not exist".format(rid_i))
+
             else:
                 raise InvalidReportException("The device {} does not exist".format(rid_i))
 
