@@ -15,8 +15,9 @@ class timeseries(MongoDB):
     aggregator_id = AnyField()
     device_id = AnyField()
     timestamp = AnyField()
+    device_class =  AnyField()
 
-    def __init__(self, account_id, aggregator_id, device_id, timestamp, **kwargs):
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
         point = self.find_one({indoor_sensing.device_id(): device_id, indoor_sensing.timestamp(): timestamp})
         if point:
             self._id = point._id
@@ -25,7 +26,7 @@ class timeseries(MongoDB):
             self.aggregator_id = aggregator_id
             self.device_id = device_id
             self.timestamp = timestamp
-
+            self.device_class = device_class
         for k, v in kwargs.items():
             self.__setattr__(k, v)
 
@@ -40,9 +41,10 @@ class indoor_sensing(timeseries):
     relhumidity = AnyField()
     airquality = AnyField()
     tvoc = AnyField()
+    device_class = AnyField()
 
-    def __init__(self, account_id, aggregator_id, device_id, timestamp, **kwargs):
-        super(indoor_sensing, self).__init__(account_id, aggregator_id, device_id, timestamp, **kwargs)
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
+        super(indoor_sensing, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
 
 class occupancy(timeseries):
@@ -53,9 +55,10 @@ class occupancy(timeseries):
     device_id = AnyField()
     timestamp = AnyField()
     occupancy = AnyField()
+    device_class = AnyField()
 
-    def __init__(self, account_id, aggregator_id, device_id, timestamp, **kwargs):
-        super(occupancy, self).__init__(account_id, aggregator_id, device_id, timestamp, **kwargs)
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
+        super(occupancy, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
 class meter(timeseries):
     __collectionname__ = "meter"
@@ -68,9 +71,10 @@ class meter(timeseries):
     kwh = AnyField()
     voltage = AnyField()
     watts = AnyField()
+    device_class = AnyField()
 
-    def __init__(self, account_id, aggregator_id, device_id, timestamp, **kwargs):
-        super(meter, self).__init__(account_id, aggregator_id, device_id, timestamp, **kwargs)
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
+        super(meter, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
 
 timeseries_mapping = {
@@ -109,6 +113,7 @@ def aggregate_timeseries(freq):
             data_device.index = pd.to_datetime(data_device.dtstart)
             account_id = data_device.account_id.unique()[0]
             aggregator_id = data_device.aggregator_id.unique()[0]
+            device_class = data_device.aggregator_id.unique()[0]
             if value['operation'] == "AVG":
                 data_device.value = pd.to_numeric(data_device.value)
                 if reading_type == "Direct Read":  # accumulated
@@ -136,7 +141,7 @@ def aggregate_timeseries(freq):
 
             for ts, v in data_clean.iterrows():
                 params = {value['field']: v.value}
-                point = value['class'](account_id, aggregator_id, device, ts, **params)
+                point = value['class'](account_id, aggregator_id, device, device_class, ts, **params)
                 point.save()
 
 # Call this function everyday at 00:00
