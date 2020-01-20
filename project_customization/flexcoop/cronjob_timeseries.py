@@ -108,6 +108,8 @@ def aggregate_timeseries(freq):
         for device, data_device in df.groupby("device_id"):
             # get the data_point information
             point = DataPoint.find_one({"device_id": device})
+            if not key in point.reporting_items:
+                continue
             point_info = point.reporting_items[key]
             reading_type = point_info['reading_type']
             data_device.index = pd.to_datetime(data_device.dtstart)
