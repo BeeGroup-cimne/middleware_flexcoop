@@ -47,8 +47,9 @@ def get_data_model(element):
         device_id = AnyField()
         account_id = AnyField()
         aggregator_id = AnyField()
+        device_class = AnyField()
 
-        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value):
+        def __init__(self, deviceID, report_id, dtstart, duration, uid, confidence, accuracy, dataQuality, value, rid):
             self.device_id = deviceID
             self.report_id = report_id
             self.dtstart = dtstart
@@ -199,7 +200,7 @@ class TelemetryUsageReport(OadrReport):
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
-                data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i)
+                data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
                 data.save()
             else:
                 raise InvalidReportException("The device {} has not been registered".format(rid_i))
