@@ -113,7 +113,7 @@ def aggregate_timeseries(freq):
             data_device.index = pd.to_datetime(data_device.dtstart)
             account_id = data_device.account_id.unique()[0]
             aggregator_id = data_device.aggregator_id.unique()[0]
-            device_class = point['rid']
+            device_class = point.rid
             if value['operation'] == "AVG":
                 data_device.value = pd.to_numeric(data_device.value)
                 if reading_type == "Direct Read":  # accumulated
