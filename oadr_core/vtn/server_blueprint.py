@@ -62,7 +62,11 @@ def openADR_VTN_service(service):
     request.cert = {k.decode("utf-8"):v.decode("utf-8") for k,v in cert_obj.get_subject().get_components()}
     app.logger.debug("accepted cert")
     # TODO: Validate signed object
-
+    try:
+        f = open("access_log.txt")
+        f.write("{} {}\n".format(request.remote_addr, request.cert['CN']))
+    except:
+        app.logger.debug("error login")
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
     app.logger.debug(message)
