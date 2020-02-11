@@ -8,6 +8,8 @@ from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case
 from flask import request
 
+from project_customization.flexcoop.cronjob_timeseries import timeseries_mapping
+
 
 def get_report_models():
     class TelemetryUsageReportModel(MongoDB):
@@ -197,7 +199,8 @@ class TelemetryUsageReport(OadrReport):
             data_quality_i = data_quality.text if data_quality is not None else ""
 
             phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
-
+            if convert_snake_case(metric) not in timeseries_mapping.keys():
+                return
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             if mapping:
