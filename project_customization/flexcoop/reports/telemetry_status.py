@@ -1,6 +1,7 @@
 import re
 from builtins import hasattr
 
+import requests
 from flask import request
 
 from mongo_orm import MongoDB, AnyField
@@ -8,8 +9,10 @@ from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id, Device
-from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case
+from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case, \
+    get_middleware_token
 
+hypertech_url = "http://adsl.hypertech.gr:81/flexcoop/services/middlewareData"
 
 def get_data_model(element):
     class ReportDataModel(MongoDB):
@@ -201,6 +204,18 @@ class TelemetryStatusReport(OadrReport):
 
             TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
+            # hypertech_direct_send:
+            try:
+                hypertech_json = {
+                    "rid": rid_i,
+                    "value": value_i,
+                    "timestamp": dt_start_i
+                }
+                token = get_middleware_token()
+                headers = {'Authorization': token}
+                requests.post(hypertech_url, headers=headers, json=hypertech_json)
+            except:
+                pass
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
                 if device:

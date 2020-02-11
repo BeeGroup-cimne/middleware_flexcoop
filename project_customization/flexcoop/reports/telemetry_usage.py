@@ -1,15 +1,17 @@
 import re
+import requests
 
 from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id
-from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case
+from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case, get_middleware_token
 from flask import request
 
 from project_customization.flexcoop.cronjob_timeseries import timeseries_mapping
 
+hypertech_url = "http://adsl.hypertech.gr:81/flexcoop/services/middlewareData"
 
 def get_report_models():
     class TelemetryUsageReportModel(MongoDB):
@@ -203,6 +205,18 @@ class TelemetryUsageReport(OadrReport):
                 return
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
+            # hypertech_direct_send:
+            try:
+                hypertech_json = {
+                    "rid": rid_i,
+                    "value": value_i,
+                    "timestamp": dtstart_i
+                }
+                token = get_middleware_token()
+                headers = {'Authorization': token}
+                requests.post(hypertech_url, headers=headers, json=hypertech_json)
+            except:
+                pass
             if mapping:
                 data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
                 data.save()
