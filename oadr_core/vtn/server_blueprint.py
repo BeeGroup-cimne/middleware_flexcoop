@@ -16,6 +16,7 @@ from oadr_core.vtn.services.ei_report_service import OadrRegisterReport, OadrCre
 from oadr_core.vtn.services.oadr_poll_service import OadrPoll
 from blinker import Namespace
 
+from settings import MONGO_URI
 
 my_signals = Namespace()
 ven_registered = my_signals.signal('ven-registered')
