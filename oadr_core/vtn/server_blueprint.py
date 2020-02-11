@@ -1,6 +1,7 @@
 import requests
 from OpenSSL import crypto
 from flask import request, abort, Response, Blueprint, current_app as app
+from flask_pymongo import MongoClient
 from lxml import etree
 
 from project_customization.flexcoop.models import oadrPollQueue
@@ -63,9 +64,8 @@ def openADR_VTN_service(service):
     app.logger.debug("accepted cert")
     # TODO: Validate signed object
     try:
-        f = open("access_log.txt")
-        f.write("{} {}\n".format(request.remote_addr, request.cert['CN']))
-        f.close()
+        access_log = MongoClient(MONGO_URI).get_database()['access_log']
+        access_log.insert_one({"IP": str(request.remote_addr), "USER": str(request.cert['CN'])})
     except:
         app.logger.debug("error login")
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
