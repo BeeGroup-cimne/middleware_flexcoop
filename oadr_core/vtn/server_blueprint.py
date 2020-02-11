@@ -65,6 +65,7 @@ def openADR_VTN_service(service):
     try:
         f = open("access_log.txt")
         f.write("{} {}\n".format(request.remote_addr, request.cert['CN']))
+        f.close()
     except:
         app.logger.debug("error login")
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
