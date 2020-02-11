@@ -9,7 +9,7 @@ from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case, get_middleware_token
 from flask import request
 
-from project_customization.flexcoop.cronjob_timeseries import timeseries_mapping
+from project_customization.flexcoop.timeseries_utils import timeseries_mapping
 
 hypertech_url = "http://adsl.hypertech.gr:81/flexcoop/services/middlewareData"
 
