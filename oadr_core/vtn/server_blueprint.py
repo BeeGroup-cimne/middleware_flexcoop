@@ -66,7 +66,7 @@ def openADR_VTN_service(service):
     # TODO: Validate signed object
 
     access_log = MongoClient(MONGO_URI).get_database()['access_log']
-    access_log.insert_one({"IP": str(request.remote_addr), "USER": str(request.cert['CN'])})
+    access_log.insert_one({"IP": str(request.environ.get('HTTP_X_REAL_IP', request.remote_addr)), "USER": str(request.cert['CN'])})
 
     root_element = payload.xpath(".//oadr:oadrSignedObject/*", namespaces=NAMESPACES)
     message = etree.QName(root_element[0].tag).localname
