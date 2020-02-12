@@ -207,7 +207,7 @@ class TelemetryStatusReport(OadrReport):
             # hypertech_direct_send:
             try:
                 hypertech_json = {
-                    "rid": rid_i,
+                    "rId": rid_i,
                     "value": value_i,
                     "timestamp": dt_start_i
                 }
