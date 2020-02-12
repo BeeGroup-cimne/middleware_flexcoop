@@ -206,14 +206,15 @@ class TelemetryStatusReport(OadrReport):
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             # hypertech_direct_send:
             try:
-                hypertech_json = {
-                    "rId": rid_i,
-                    "value": value_i,
-                    "timestamp": dt_start_i
-                }
-                token = get_middleware_token()
-                headers = {'Authorization': token}
-                requests.post(hypertech_url, headers=headers, json=hypertech_json)
+                with requests.Session() as s:
+                    hypertech_json = {
+                        "rId": rid_i,
+                        "value": value_i,
+                        "timestamp": dt_start_i
+                    }
+                    token = get_middleware_token()
+                    headers = {'Authorization': token}
+                    s.post(hypertech_url, headers=headers, json=hypertech_json)
             except:
                 pass
             if mapping:
