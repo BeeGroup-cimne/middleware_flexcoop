@@ -214,7 +214,8 @@ class TelemetryStatusReport(OadrReport):
                     }
                     token = get_middleware_token()
                     headers = {'Authorization': token}
-                    s.post(hypertech_url, headers=headers, json=hypertech_json)
+                    resp = s.post(hypertech_url, headers=headers, json=hypertech_json)
+                    print(resp)
             except:
                 pass
             if mapping:
