@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import sys
 
-from pymongo import UpdateOne
+from pymongo import UpdateOne, ReplaceOne
 
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
@@ -66,7 +66,7 @@ def aggregate_timeseries(freq):
             print("writting_data {}".format(data_clean.count().value))
             for ts, v in data_clean.iterrows():
                 params = {'account_id': account_id, 'aggregator_id': aggregator_id, "device_id": device, "device_class": device_class, "timestamp": ts, value['field']: v.value}
-                bulk_write.append(UpdateOne({"device_id": device, "timestamp": ts}, {'$set': params}, True))
+                bulk_write.append(ReplaceOne({"device_id": device, "timestamp": ts}, params, True))
             raw_model.__mongo__.bulk_write(bulk_write)
 
 # Call this function everyday at 00:00
