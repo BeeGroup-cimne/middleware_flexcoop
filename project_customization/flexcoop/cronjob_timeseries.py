@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import sys
 
+from pymongo import UpdateOne
 
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
@@ -23,6 +24,7 @@ def aggregate_timeseries(freq):
         df = pd.DataFrame.from_records(data)
         print(key)
         for device, data_device in df.groupby("device_id"):
+            print(device)
             # get the data_point information
             point = DataPoint.find_one({"device_id": device})
             if not key in point.reporting_items:
@@ -33,6 +35,7 @@ def aggregate_timeseries(freq):
             account_id = data_device.account_id.unique()[0]
             aggregator_id = data_device.aggregator_id.unique()[0]
             device_class = point.rid
+            print("readed data")
             if value['operation'] == "AVG":
                 data_device.value = pd.to_numeric(data_device.value)
                 if reading_type == "Direct Read":  # accumulated
@@ -58,10 +61,13 @@ def aggregate_timeseries(freq):
             else:
                 data_clean = pd.DataFrame()
 
+            print("treated data")
+            bulk_write = []
+            print("writting_data {}".format(data_clean.count().value))
             for ts, v in data_clean.iterrows():
                 params = {value['field']: v.value}
-                point = value['class'](account_id, aggregator_id, device, device_class, ts, **params)
-                point.save()
+                bulk_write.append(UpdateOne({'account_id': account_id, 'aggregator_id': aggregator_id, "device_id": device, "device_class": device_class, "timestamp": ts}, {'$set': params}))
+            raw_model.__mongo__.bulk_write(bulk_write)
 
 # Call this function everyday at 00:00
 def delete_raw_data():
