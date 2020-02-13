@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 import sys
 
-from project_customization.flexcoop.timeseries_utils import timeseries_mapping
 
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
+from project_customization.flexcoop.timeseries_utils import timeseries_mapping
+
 import pandas as pd
 """We define the cronjobs to be executed to deal with the raw data recieved"""
 
