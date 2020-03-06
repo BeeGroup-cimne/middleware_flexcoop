@@ -9,7 +9,7 @@ status_mapping = {
     "mode": "mode",
     "temperature": "setPoint",
     "fanspeed": "x-fanspeed",
-    "brigthness": "setPoint",
+    "brightness": "setPoint",
     "colorTemperature": "x-color",
     "color": "setPoint",
     "switchBinary": "operationState"
