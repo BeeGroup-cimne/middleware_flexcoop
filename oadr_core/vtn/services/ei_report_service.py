@@ -7,7 +7,6 @@ from oadr_core.oadr_base_service import OadrMessage
 from oadr_core.oadr_payloads.oadr_payloads_general import oadrPayload, oadrResponse, NAMESPACES
 from oadr_core.oadr_payloads.oadr_payloads_report_service import oadrRegisteredReport, oadrCreatedReport, \
     oadrUpdatedReport, oadrCanceledReport, oadrRegisterReport, oadrUpdateReport, oadrCancelReport, oadrCreateReport
-from project_customization.base_customization import project_configuration
 
 
 class OadrRegisterReport(OadrMessage):
@@ -31,6 +30,7 @@ class OadrRegisterReport(OadrMessage):
 
         # respond
         try:
+            from project_customization.base_customization import project_configuration
             code, description, report_types = project_configuration.on_OadrRegisterReport_recieved(requestID, venID, final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES))
         except InvalidVenException as e:
             code = e.code
@@ -47,6 +47,7 @@ class OadrRegisterReport(OadrMessage):
         """send a RegisterReport message"""
         # This is an automatic generation, as it will depend on the "database metadata reports owned"
         venID = params['venID']
+        from project_customization.base_customization import project_configuration
         requestID, reportRequestID, reports = project_configuration.on_OadrRegisterReport_send(venID)
         content = oadrRegisterReport(requestID, requestID, venID, reports)
         return oadrPayload(content)
@@ -62,6 +63,7 @@ class OadrRegisterReport(OadrMessage):
             venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
             requestID = final_parameters.find(".//pyld:requestID", namespace=NAMESPACES).text
             try:
+                from project_customization.base_customization import project_configuration
                 project_configuration.on_OadrRegisterReport_response(response_code, responseDescription, venID, oadrReportRequest)
             except InvalidVenException as e:
                 print("Recieved an invalid VEN")
@@ -82,6 +84,8 @@ class OadrRegisteredReport(OadrMessage):
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
         requestID = final_parameters.find(".//pyld:requestID", namespace=NAMESPACES).text
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrRegisteredReport_recieved(response_code, responseDescription, venID,
                                                                  oadrReportRequest)
         except InvalidVenException as e:
@@ -117,6 +121,8 @@ class OadrCreatedReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrCreatedReport_recieved(venID, pending_reports)
         except InvalidVenException as e:
             code = e.code
@@ -130,6 +136,8 @@ class OadrCreatedReport(OadrMessage):
         # TODO: define request ID
         requestID = 0
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description, pending_reports = project_configuration.on_OadrCreatedReport_send(venID)
         except InvalidVenException as e:
             code = e.code
@@ -151,6 +159,8 @@ class OadrCreatedReport(OadrMessage):
         venID_ = final_parameters.find(".//ei:venID", namespaces=NAMESPACES)
         venID = venID_.text if venID_ is not None else ""
         try:
+            from project_customization.base_customization import project_configuration
+
             project_configuration.on_OadrCreatedReport_response(venID, responseCode, responseDescription)
         except InvalidResponseException as e:
             print(e)
@@ -167,6 +177,8 @@ class OadrUpdateReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
         reports = final_parameters.findall(".//oadr:oadrReport", namespaces=NAMESPACES)
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description, cancel_reports = project_configuration.on_OadrUpdateReport_recieved(venID, reports)
         except InvalidVenException as e:
             code = e.code
@@ -183,6 +195,8 @@ class OadrUpdateReport(OadrMessage):
     def _create_message(self, params):
         venID = params['venID']
         requestID = params['requestID']
+        from project_customization.base_customization import project_configuration
+
         reports_dic = project_configuration.on_OadrUpdateReport_send(venID)
         content = oadrUpdateReport(requestID, reports_dic, venID)
         return oadrPayload(content)
@@ -200,6 +214,8 @@ class OadrUpdateReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
         cancelReports = final_parameters.findall(".//ei:reportRequestID")
         try:
+            from project_customization.base_customization import project_configuration
+
             project_configuration.on_OadrUpdateReport_response(venID, responseCode, responseDescription, cancelReports)
         except InvalidResponseException as e:
             print(e)
@@ -217,6 +233,8 @@ class OadrUpdatedReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
         cancelReports = final_parameters.findall(".//ei:reportRequestID")
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrUpdatedReport_recieved(venID, responseCode, responseDescription, cancelReports)
         except InvalidResponseException as e:
             print(e)
@@ -243,6 +261,8 @@ class OadrCreateReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description, pending_reports = project_configuration.on_OadrCreateReport_recieved(venID, final_parameters.findall(".//oadr:oadrReportRequest", namespaces=NAMESPACES))
         except InvalidVenException as e:
             code = e.code
@@ -274,6 +294,8 @@ class OadrCreateReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrCreateReport_response(venID, pending_reports)
         except InvalidVenException as e:
             code = e.code
@@ -296,6 +318,8 @@ class OadrCancelReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         # respond
+        from project_customization.base_customization import project_configuration
+
         code, description, pending_reports = project_configuration.on_OadrCancelReport_recieved(venID, cancel_reports, report_to_follow)
         content = oadrCanceledReport(code, description, str(requestID), pending_reports, venID)
         return oadrPayload(content)
@@ -323,6 +347,8 @@ class OadrCancelReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrCancelReport_response(response_code, responseDescription, pending_reports)
         except InvalidResponseException as e:
             code = e.code
@@ -345,6 +371,8 @@ class OadrCanceledReport(OadrMessage):
         venID = venID_.text if venID_ is not None else ""
 
         try:
+            from project_customization.base_customization import project_configuration
+
             code, description = project_configuration.on_OadrCanceledReport_recieved(venID, responseCode, responseDescription, pending_reports)
         except InvalidResponseException as e:
             code = e.code

@@ -6,7 +6,6 @@ from flask import request
 
 from oadr_core.exceptions import InvalidVenException, InvalidReportException, InvalidResponseException
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
-from oadr_core.vtn.server_blueprint import send_message
 from oadr_core.vtn.services.ei_report_service import OadrCreateReport
 from project_customization.flexcoop.models import VEN, MetadataReports, DataPoint, ReportsToSend, Device, \
     map_rid_device_id
@@ -142,6 +141,7 @@ class FlexcoopCustomization():
                 "requestID": "0",
                 "report_types": report_types
             }
+            from oadr_core.vtn.server_blueprint import send_message
             response = send_message(createReport, ven, params)
             # TODO do something with the response if required by the protocol. When oadrPoll response will be None
 
