@@ -109,8 +109,6 @@ class FlexcoopCustomization():
         register_reports = []
         for report, data_points in report_data_points.items():
             register_data_points = []
-            non_registered_data_points = []
-            change = False
             for data_point in data_points['data_points']:
                 for k, v in data_point.reporting_items.items():
                     register_data_points.append((data_point, v['oadr_name'], v['reading_type']))
@@ -125,6 +123,7 @@ class FlexcoopCustomization():
 
             report.subscribed = True
             report.save()
+            register_reports.append((report, register_data_points))
 
         if register_reports:
             createReport = OadrCreateReport()
