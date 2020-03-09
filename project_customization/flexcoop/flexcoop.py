@@ -1,9 +1,15 @@
+import threading
 import traceback
 from datetime import datetime
 
+from flask import request
+
 from oadr_core.exceptions import InvalidVenException, InvalidReportException, InvalidResponseException
 from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
-from project_customization.flexcoop.models import VEN, MetadataReports, DataPoint, ReportsToSend
+from oadr_core.vtn.server_blueprint import send_message
+from oadr_core.vtn.services.ei_report_service import OadrCreateReport
+from project_customization.flexcoop.models import VEN, MetadataReports, DataPoint, ReportsToSend, Device, \
+    map_rid_device_id
 from project_customization.flexcoop.reports.metadata_telemetry_status import MetadataTelemetryStatusReport
 from project_customization.flexcoop.reports.metadata_telemetry_usage import MetadataTelemetryUsageReport
 from project_customization.flexcoop.reports.telemetry_status import TelemetryStatusReport
@@ -89,13 +95,70 @@ class FlexcoopCustomization():
         print("missing_parameters TODO")
 
     ### EI REPORT
-    def auto_subsciption_reports(self):
+
+    def auto_subscription_reports_create(self, venID):
+        """ When called sends oadrCreateReport with all the reports recieved by the VEN
+        """
+        # get all reports from user:
+        ven = VEN.find_one({VEN.ven_id(): venID})
+        reports = MetadataReports.find({MetadataReports.ven(): ven._id})
+        report_data_points = {}
+        for report in reports:
+            report_data_points[report] = {"data_points": DataPoint.find({DataPoint.report(): report._id}),
+                                          "devices": Device.find({Device.report(): report._id})}
+
+        register_reports = []
+        for report, data_points in report_data_points.items():
+            register_data_points = []
+            non_registered_data_points = []
+            change = False
+            for data_point in data_points['data_points']:
+                for k, v in data_point.reporting_items.items():
+                    register_data_points.append((data_point, v['oadr_name'], v['reading_type']))
+                    data_point.reporting_items[k]['subscribed'] = True
+                    data_point.save()
+
+            for device in data_points['devices']:
+                for k, v in device.status.items():
+                    register_data_points.append((device, v['oadr_name'], v['reading_type']))
+                    device.status[k]['subscribed'] = True
+                    device.save()
+
+            report.subscribed = True
+            report.save()
+
+        if register_reports:
+            createReport = OadrCreateReport()
+            report_types = [{"reportId": x.ei_report_id,
+                             "specifierId": x.specifier_id,
+                             "data_points": [
+                                 {
+                                     'rid': "{}_{}".format(map_rid_device_id.find_one(
+                                         {map_rid_device_id.device_id(): d[0].device_id}).rid, d[1]),
+                                     'reading_type': d[2]
+                                 } for d in y]
+                             } for x, y in register_reports]
+            params = {
+                "requestID": "0",
+                "report_types": report_types
+            }
+            response = send_message(createReport, ven, params)
+            # TODO do something with the response if required by the protocol. When oadrPoll response will be None
+
+
+    def auto_subsciption_reports(self, venID):
         """Subscribe programatically to reports by adding them to the response of oadrRegisteredReport.
          This is done for registering to some reports when the first metadata is recieved
          """
+       # As a flexcoop special action, start a thread, wait 10 seconds and subscrive to all reports using the createReport
+        tp_thread = threading.Timer(10, self.auto_subscription_reports_create, args=(venID))
+        tp_thread.start()
+
         # TODO: get reports registerd by a VEN and prepare the subscription to the required ones
+
         # report_types = [{"reportId": "reportId", "specifierId": "specifierId", "data_points":[{"rid":"a", "reading_type":"Direct Read"},{"rid":"b", "reading_type": "Direct Read"}]}]
         return []
+
 
     def register_report(self, r_request):
         reportSpecifierID = r_request.find(".//ei:reportSpecifierID", namespaces=NAMESPACES).text
@@ -141,7 +204,7 @@ class FlexcoopCustomization():
                 raise InvalidReportException("error in report")
 
 
-        report_types = self.auto_subsciption_reports()
+        report_types = self.auto_subsciption_reports(venID)
         return "200", "OK", report_types
 
     def on_OadrRegisterReport_send(self, venID ):
