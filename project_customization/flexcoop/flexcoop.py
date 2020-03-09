@@ -126,6 +126,7 @@ class FlexcoopCustomization():
             register_reports.append((report, register_data_points))
 
         if register_reports:
+            print("subscriving to reports")
             createReport = OadrCreateReport()
             report_types = [{"reportId": x.ei_report_id,
                              "specifierId": x.specifier_id,
@@ -150,7 +151,7 @@ class FlexcoopCustomization():
          This is done for registering to some reports when the first metadata is recieved
          """
        # As a flexcoop special action, start a thread, wait 10 seconds and subscrive to all reports using the createReport
-        tp_thread = threading.Timer(10, self.auto_subscription_reports_create, args=(venID))
+        tp_thread = threading.Timer(5, self.auto_subscription_reports_create, args=(venID,))
         tp_thread.start()
 
         # TODO: get reports registerd by a VEN and prepare the subscription to the required ones
