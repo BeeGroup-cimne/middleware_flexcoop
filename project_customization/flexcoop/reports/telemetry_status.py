@@ -201,7 +201,8 @@ class TelemetryStatusReport(OadrReport):
             dataQuality_i = dataQuality.text if dataQuality is not None else ""
 
             phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
-
+            if metric not in status_mapping.keys():
+                continue
             TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             # hypertech_direct_send:
