@@ -7,7 +7,6 @@ class OadrPoll(OadrMessage):
     def _create_response(self, params):
         final_parameters = params.xpath(".//oadr:oadrPoll", namespaces=NAMESPACES)[0]
         venID = final_parameters.find(".//ei:venID", namespaces=NAMESPACES).text
-        print("AAAAA")
         if venID in oadrPollQueue and oadrPollQueue[venID]:
             print(venID)
             type, response = oadrPollQueue[venID].pop(0)
