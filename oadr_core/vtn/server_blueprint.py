@@ -5,7 +5,7 @@ from flask_pymongo import MongoClient
 from lxml import etree
 
 from project_customization.flexcoop.models import oadrPollQueue
-from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES
+from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, pretty_print_xml
 from oadr_core.vtn.after_request import AfterResponse
 from project_customization.flexcoop.models import VEN
 from oadr_core.vtn.services.ei_event_service import OadrCreatedEvent, OadrDistributeEvent
@@ -80,7 +80,8 @@ def openADR_VTN_service(service):
             response = etree.tostring(responder.respond(payload))
             if 'recieve' in events:
                 app.response_callback.append((events['recieve'], response))
-
+            if message == "OadrPoll":
+                print(pretty_print_xml(response))
             return response, 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))
