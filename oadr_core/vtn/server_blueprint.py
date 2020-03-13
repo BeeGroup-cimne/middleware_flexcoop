@@ -80,8 +80,7 @@ def openADR_VTN_service(service):
             response = etree.tostring(responder.respond(payload))
             if 'recieve' in events:
                 app.response_callback.append((events['recieve'], response))
-            if message == "OadrPoll":
-                print(pretty_print_xml(response))
+            print(pretty_print_xml(response))
             return response, 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))
