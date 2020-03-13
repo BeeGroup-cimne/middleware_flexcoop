@@ -1,6 +1,6 @@
 from oadr_core.oadr_base_service import OadrMessage
 from project_customization.flexcoop.models import oadrPollQueue
-from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, oadrResponse, oadrPayload
+from oadr_core.oadr_payloads.oadr_payloads_general import NAMESPACES, oadrResponse, oadrPayload, pretty_print_xml
 
 
 class OadrPoll(OadrMessage):
@@ -12,5 +12,5 @@ class OadrPoll(OadrMessage):
             type, response = oadrPollQueue[venID].pop(0)
         else:
             response = oadrPayload(oadrResponse("200", "OK", "0", venID))
-        print(response)
+        print(pretty_print_xml(response))
         return response
