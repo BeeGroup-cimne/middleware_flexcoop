@@ -43,5 +43,4 @@ class OadrDistributeEvent(OadrMessage):
         events = params['event_list']
         requestID = params['requestID']
         content = oadrDistributeEvent("200", "OK", requestID, requestID, project_configuration.VTN_ID, events)
-        print(oadrPayload(content))
         return oadrPayload(content)

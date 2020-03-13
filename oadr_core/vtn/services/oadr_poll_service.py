@@ -12,4 +12,5 @@ class OadrPoll(OadrMessage):
             type, response = oadrPollQueue[venID].pop(0)
         else:
             response = oadrPayload(oadrResponse("200", "OK", "0", venID))
+        print(response)
         return response
