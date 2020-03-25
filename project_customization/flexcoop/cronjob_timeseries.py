@@ -88,7 +88,7 @@ def aggregate_timeseries(freq):
             df = pd.DataFrame.from_records(data)
             # get the data_point information
             point = DataPoint.find_one({"device_id": device})
-            if not key in point.reporting_items:
+            if not point or not key in point.reporting_items:
                 continue
             point_info = point.reporting_items[key]
             reading_type = point_info['reading_type']
