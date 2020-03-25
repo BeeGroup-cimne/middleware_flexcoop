@@ -5,15 +5,58 @@ from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
-from project_customization.flexcoop.models import DataPoint
+from project_customization.flexcoop.models import DataPoint, Device
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
-from project_customization.flexcoop.timeseries_utils import timeseries_mapping, indoor_sensing, occupancy, meter
+from project_customization.flexcoop.timeseries_utils import timeseries_mapping, indoor_sensing, occupancy, meter, \
+    status_devices, device_status
 
 import pandas as pd
 """We define the cronjobs to be executed to deal with the raw data recieved"""
 
 #define the final timeseries models:
 
+def aggregate_device_status():
+    devices = set()
+    device_status_data = []
+    for key, value in status_devices.items():
+        raw_model = get_data_model(key)
+        devices.update(raw_model.__mongo__.distinct("device_id"))
+        if value['class'] == device_status:
+            device_status_data.append(key)
+    for device in devices:
+        device_df = []
+        data_clean = pd.DataFrame()
+        device_mongo = Device.find_one({"device_id": device})
+        account_id = device_mongo.account_id
+        aggregator_id = device_mongo.aggregator_id
+        device_class = device_mongo.rid
+        for key, value in status_devices.items():
+            print(value['field'])
+            raw_model = get_data_model(key)
+            data = MongoDB.to_dict(raw_model.find({"device_id": device}))
+            if not data:
+                continue
+            df = pd.DataFrame.from_records(data)
+            df.index = pd.to_datetime(df.dtstart)
+            df = df.sort_index()
+            df = df[['value']].resample('1s').first()
+            if not df.empty:
+                data_clean[value['field']] = df.value
+        print("readed data")
+        data_clean = data_clean.dropna(how="all")
+        data_clean['account_id'] = account_id
+        data_clean['aggregator_id'] = aggregator_id
+        data_clean['device_class'] = device_class
+        data_clean['device_id'] = device
+        data_clean['timestamp'] = data_clean.index.to_pydatetime()
+        data_clean['_created_at'] = datetime.utcnow()
+        data_clean['_updated_at'] = datetime.utcnow()
+        df_ini = min(data_clean.index)
+        df_max = max(data_clean.index)
+        documents = data_clean.to_dict('records')
+        print("writting_sensing_data {}".format(len(documents)))
+        device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+        device_status.__mongo__.insert_many(documents)
 
 def aggregate_timeseries(freq):
     #search for all reporting devices
@@ -158,11 +201,20 @@ def delete_raw_data():
             ts = datetime.strptime(d.dtstart, "%Y-%m-%dT%H:%M:%S.%f")
             if ts < now:
                 d.delete()
+    for key, value in status_devices.items():
+        raw_model = get_data_model(key)
+        data = raw_model.find({})
+        for d in data:
+            ts = datetime.strptime(d.dtstart, "%Y-%m-%dT%H:%M:%S.%f")
+            if ts < now:
+                d.delete()
+
 
 
 # Call this function every 15 min
 def clean_data():
     aggregate_timeseries("15Min")
+    aggregate_device_status()
 
 if __name__ == "__main__":
     if sys.argv[2] == "clean":

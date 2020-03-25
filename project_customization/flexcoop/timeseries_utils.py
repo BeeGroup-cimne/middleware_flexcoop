@@ -68,6 +68,21 @@ class meter(timeseries):
     def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
         super(meter, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
+class device_status(timeseries):
+    __collectionname__ = "device_status"
+    account_id = AnyField()
+    aggregator_id = AnyField()
+    device_id = AnyField()
+    timestamp = AnyField()
+    device_class = AnyField()
+    operation_state = AnyField()
+    set_point = AnyField()
+    mode = AnyField()
+    color = AnyField()
+    fanspeed=AnyField()
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
+        super(device_status, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
+
 
 timeseries_mapping = {
     "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG"},
@@ -87,4 +102,12 @@ timeseries_mapping = {
     "meter_kwh": { "class": meter, "field": "kwh", "operation": "SUM"},
     "meter_voltage": { "class": meter, "field": "voltage", "operation": "AVG"},
     "meter_watts": { "class": meter, "field": "watts", "operation": "AVG"},
+}
+
+status_devices = {
+    "status_mode" : {"class": device_status, "field": "mode"},
+    "status_operation_state" : {"class": device_status, "field": "operation_state"},
+    "status_set_point" : {"class": device_status, "field": "set_point"},
+    "status_x-color" : {"class": device_status, "field": "color"},
+    "status_x-fanspeed" : {"class": device_status, "field": "fanspeed"},
 }
