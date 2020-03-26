@@ -196,19 +196,11 @@ def delete_raw_data():
     now = datetime.utcnow() - timedelta(minutes=15)
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
-        data = raw_model.find({})
-        for d in data:
-            ts = datetime.strptime(d.dtstart, "%Y-%m-%dT%H:%M:%S.%f")
-            if ts < now:
-                d.delete()
+        raw_model.__mongo__.delete_many({"dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}})
+
     for key, value in status_devices.items():
         raw_model = get_data_model(key)
-        data = raw_model.find({})
-        for d in data:
-            ts = datetime.strptime(d.dtstart, "%Y-%m-%dT%H:%M:%S.%f")
-            if ts < now:
-                d.delete()
-
+        raw_model.__mongo__.delete_many({"dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}})
 
 
 # Call this function every 15 min
