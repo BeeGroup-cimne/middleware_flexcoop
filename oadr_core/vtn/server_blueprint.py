@@ -82,7 +82,7 @@ def openADR_VTN_service(service):
                 app.response_callback.append((events['recieve'], response))
             if message == "oadrUpdateReport":
                 try:
-                    value = payload.xpath("//rid", namespaces=NAMESPACES)
+                    value = payload..find(".//ei:rID", namespaces=NAMESPACES).text
                     print(value)
                 except:
                     print("notvalid rid query")
