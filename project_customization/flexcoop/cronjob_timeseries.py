@@ -191,7 +191,7 @@ def aggregate_timeseries(freq):
                 {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
             meter.__mongo__.insert_many(documents)
 
-# Call this function everyday at 00:00
+# Call this function everyday at 00:00, 08:00 and at 16:00
 def delete_raw_data():
     now = datetime.utcnow() - timedelta(minutes=15)
     for key, value in timeseries_mapping.items():
