@@ -3,6 +3,8 @@ import sys
 
 from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
+from project_customization.flexcoop.utils import convert_snake_case
+
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint, Device
@@ -11,9 +13,18 @@ from project_customization.flexcoop.timeseries_utils import timeseries_mapping, 
     status_devices, device_status
 
 import pandas as pd
+import numpy as np
 """We define the cronjobs to be executed to deal with the raw data recieved"""
 
 #define the final timeseries models:
+def no_outliers_stats(series, lowq=2.5, highq=97.5):
+  hh = series[(series <= np.nanquantile(series, highq/100))& (series >= np.nanquantile(series, lowq/100))]
+  return {"mean": hh.mean(), "median": hh.median(), "std": hh.std()}
+
+def clean_znorm_data(series, lowq=2.5, highq=97.5):
+    stats = no_outliers_stats(series, lowq, highq)
+    zscore = np.abs( (series - stats['median']) / stats['std'])
+    return series[zscore < 10]
 
 def aggregate_device_status():
     devices = set()
@@ -58,38 +69,34 @@ def aggregate_device_status():
         device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
         device_status.__mongo__.insert_many(documents)
 
-def aggregate_timeseries(freq):
+
+def aggregate_timeseries(freq, now):
     #search for all reporting devices
     devices = set()
-    indoor_sensing_raw_data = []
-    occupancy_raw_data = []
-    meter_raw_data = []
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
-        if value['class'] == indoor_sensing:
-            indoor_sensing_raw_data.append(key)
-        elif value['class'] == occupancy:
-            occupancy_raw_data.append(key)
-        elif value['class'] == meter:
-            meter_raw_data.append(key)
     #iterate for each device to obtain the clean data of each type.
     for device in devices:
+        point = DataPoint.find_one({"device_id": device})
+        if not point:
+            continue
+
         indoor_sensing_df = []
         occupancy_df = []
         meter_df = []
-        print(device)
-        for key, value in timeseries_mapping.items():
+
+        for key in point.reporting_items.keys():
+            try:
+                value = timeseries_mapping[key]
+            except:
+                continue
             raw_model = get_data_model(key)
             data = MongoDB.to_dict(raw_model.find({"device_id": device}))
             if not data:
                 continue
-            print(key)
             df = pd.DataFrame.from_records(data)
             # get the data_point information
-            point = DataPoint.find_one({"device_id": device})
-            if not point or not key in point.reporting_items:
-                continue
             point_info = point.reporting_items[key]
             reading_type = point_info['reading_type']
             df.index = pd.to_datetime(df.dtstart)
@@ -97,42 +104,68 @@ def aggregate_timeseries(freq):
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
+
             print("readed data")
-            if value['operation'] == "AVG":
-                df.value = pd.to_numeric(df.value)
-                if reading_type == "Direct Read":  # accumulated
-                    df.value = df.value.diff()
-                data_clean = df[['value']].resample("1s").mean().interpolate().resample(freq).mean()
-            elif value['operation'] == "FIRST":
-                try:
-                    if reading_type == "Direct Read":  # accumulated
-                        df.value = df.value.diff()
-                except:
-                    pass
-                data_clean = df[['value']].resample(freq).first()
-            elif value['operation'] == "MAX":
-                df.value = pd.to_numeric(df.value)
-                if reading_type == "Direct Read":  # accumulated
-                    df.value = df.value.diff()
-                data_clean = df[['value']].resample(freq).max()
-            elif value['operation'] == "SUM":
-                df.value = pd.to_numeric(df.value)
-                if reading_type == "Direct Read":  # accumulated
-                    df.value = df.value.diff()
-                data_clean = df[['value']].cumsum().resample("1s").mean().interpolate().resample(freq).mean().diff()
+            if reading_type == "Direct Read":
+                if value['operation'] == "SUM":
+                    try:
+                        df.value = pd.to_numeric(df.value)
+                    except:
+                        print("AVG is only valid for numeric values")
+                        continue
+                    data_clean = df.resample("1s").mean().interpolate().resample(freq).mean().diff().dropna()
+                    if value['cleaning']:
+                        data_clean.value = clean_znorm_data(data_clean.value)
+                else:
+                    data_clean = pd.DataFrame()
+
+            elif reading_type == "Net":
+                # instant values, expand the value tu the current time
+                df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
+                if value['operation'] == "AVG":
+                    # average is applied to numeric values
+                    try:
+                        df.value = pd.to_numeric(df.value)
+                    except:
+                        print("AVG is only valid for numeric values")
+                        continue
+                    data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
+                    if value['cleaning']:
+                        data_clean.value = clean_znorm_data(data_clean.value)
+                elif value['operation'] == "FIRST":
+                    # first is applied to all types
+                    data_clean = df.resample("1s").pad().dropna().resample(freq).first()
+
+                elif value['operation'] == "MAX":
+                    # max is applied to numeric values
+                    try:
+                        df.value = pd.to_numeric(df.value)
+                    except:
+                        print("MAX is only valid for numeric values")
+                        continue
+
+                    data_clean = df.resample("1s").pad().dropna().resample(freq).max()
+                    if value['cleaning']:
+                        data_clean.value = clean_znorm_data(data_clean.value)
+                else:
+                    data_clean = pd.DataFrame()
+
             else:
                 data_clean = pd.DataFrame()
 
+
             if data_clean.empty:
                 continue
-            data_clean[value['field']] = data_clean['value']
-            data_clean = data_clean.drop("value", axis=1)
-            if key in indoor_sensing_raw_data:
-                indoor_sensing_df.append(data_clean)
-            elif key in occupancy_raw_data:
-                occupancy_df.append(data_clean)
-            elif key in meter_raw_data:
-                meter_df.append(data_clean)
+
+            df = pd.DataFrame(data_clean)
+            df = df.rename(columns={"value": value['field']})
+
+            if value['class'] == indoor_sensing:
+                indoor_sensing_df.append(df)
+            elif value['class'] == occupancy:
+                occupancy_df.append(df)
+            elif value['class'] == meter:
+                meter_df.append(df)
             else:
                 continue
         print("treated data")
@@ -193,14 +226,69 @@ def aggregate_timeseries(freq):
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
 def delete_raw_data():
-    now = datetime.utcnow() - timedelta(minutes=15)
+    # search for all reporting devices
+    devices = set()
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
-        raw_model.__mongo__.delete_many({"dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}})
+        devices.update(raw_model.__mongo__.distinct("device_id"))
+    # shall to delete all raw data, but leave the last timestep.
+    to_keep = {}
+    for device in devices:
+        print(device)
+        point = DataPoint.find_one({"device_id": device})
+        if not point:
+            continue
+        for key in point.reporting_items.keys():
+            try:
+                value = timeseries_mapping[key]
+            except:
+                continue
+            raw_model = get_data_model(key)
+            now = raw_model.__mongo__.find({"device_id": device}, sort=[("dtstart", -1)])
+            try:
+                if now.limit(1)[0]:
+                    try:
+                        to_keep[key].append(now[0]['_id'])
+                    except:
+                        to_keep[key] = [now[0]['_id']]
+            except:
+                continue
+    for key, value in to_keep.items():
+        raw_model = get_data_model(key)
+        raw_model.__mongo__.delete_many({"_id":{"$nin": value}})
 
+    devices = set()
     for key, value in status_devices.items():
         raw_model = get_data_model(key)
-        raw_model.__mongo__.delete_many({"dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")}})
+        devices.update(raw_model.__mongo__.distinct("device_id"))
+
+    # shall to delete all raw data, but leave the last timestep.
+    to_keep = {}
+    for device in devices:
+        print(device)
+        point = Device.find_one({"device_id": device})
+        if not point:
+            continue
+        for key in point.status.keys():
+            try:
+                database = "{}_{}".format("status",convert_snake_case(key))
+                value = status_devices[database]
+            except:
+                continue
+            raw_model = get_data_model(database)
+            now = raw_model.__mongo__.find({"device_id": device}, sort=[("dtstart", -1)])
+            try:
+                if now.limit(1)[0]:
+                    try:
+                        to_keep[database].append(now[0]['_id'])
+                    except:
+                        to_keep[database] = [now[0]['_id']]
+            except:
+                continue
+    for key, value in to_keep.items():
+        raw_model = get_data_model(key)
+        print(key)
+        print(list(raw_model.__mongo__.find({"_id":{"$nin": value}})))
 
 
 # Call this function every 15 min

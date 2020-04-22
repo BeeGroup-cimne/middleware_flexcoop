@@ -85,23 +85,23 @@ class device_status(timeseries):
 
 
 timeseries_mapping = {
-    "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG"},
-    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG"},
-    "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG"},
-    "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG"},
-    "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG"},
-    "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG"},
-    "humidity": { "class": indoor_sensing, "field": "relhumidity", "operation": "AVG"},
-    "airquality": { "class": indoor_sensing, "field": "airquality", "operation": "FIRST"},
-    "tvoc": { "class": indoor_sensing, "field": "tvoc","operation": "MAX"},
+    "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": True},
+    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning": True},
+    "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": True},
+    "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": True},
+    "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": True},
+    "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": True},
+    "humidity": { "class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": True},
+    "airquality": { "class": indoor_sensing, "field": "airquality", "operation": "FIRST", "cleaning": False},
+    "tvoc": { "class": indoor_sensing, "field": "tvoc","operation": "MAX", "cleaning": False},
 
-    "alarm_motion": { "class": occupancy, "field": "occupancy", "operation": "AVG"},
-    "motion": { "class": occupancy, "field": "occupancy", "operation": "AVG"},
+    "alarm_motion": { "class": occupancy, "field": "occupancy", "operation": "AVG", "cleaning": False},
+    "motion": { "class": occupancy, "field": "occupancy", "operation": "AVG", "cleaning": False},
 
-    "meter_current": { "class": meter, "field": "current", "operation": "AVG"},
-    "meter_kwh": { "class": meter, "field": "kwh", "operation": "SUM"},
-    "meter_voltage": { "class": meter, "field": "voltage", "operation": "AVG"},
-    "meter_watts": { "class": meter, "field": "watts", "operation": "AVG"},
+    "meter_current": { "class": meter, "field": "current", "operation": "AVG", "cleaning": True},
+    "meter_kwh": { "class": meter, "field": "kwh", "operation": "SUM", "cleaning": True},
+    "meter_voltage": { "class": meter, "field": "voltage", "operation": "AVG", "cleaning": True},
+    "meter_watts": { "class": meter, "field": "watts", "operation": "AVG", "cleaning": True},
 }
 
 status_devices = {
