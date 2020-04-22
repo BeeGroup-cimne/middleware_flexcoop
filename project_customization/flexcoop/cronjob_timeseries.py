@@ -293,7 +293,7 @@ def delete_raw_data():
 
 # Call this function every 15 min
 def clean_data():
-    aggregate_timeseries("15Min")
+    aggregate_timeseries("15Min", datetime.utcnow())
     aggregate_device_status()
 
 if __name__ == "__main__":
