@@ -3,7 +3,6 @@ import sys
 
 from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
-from project_customization.flexcoop.utils import convert_snake_case
 
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
@@ -11,6 +10,7 @@ from project_customization.flexcoop.models import DataPoint, Device
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
 from project_customization.flexcoop.timeseries_utils import timeseries_mapping, indoor_sensing, occupancy, meter, \
     status_devices, device_status
+from project_customization.flexcoop.utils import convert_snake_case
 
 import pandas as pd
 import numpy as np
