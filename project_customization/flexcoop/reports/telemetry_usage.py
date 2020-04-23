@@ -206,18 +206,18 @@ class TelemetryUsageReport(OadrReport):
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             # hypertech_direct_send:
-            try:
-                with requests.Session() as s:
-                    hypertech_json = {
-                        "rId": rid_i,
-                        "value": value_i,
-                        "timestamp": dtstart_i
-                    }
-                    token = get_middleware_token()
-                    headers = {'Authorization': token}
-                    s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-            except:
-                pass
+            # try:
+            #     with requests.Session() as s:
+            #         hypertech_json = {
+            #             "rId": rid_i,
+            #             "value": value_i,
+            #             "timestamp": dtstart_i
+            #         }
+            #         token = get_middleware_token()
+            #         headers = {'Authorization': token}
+            #         s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
+            # except:
+            #     pass
             if mapping:
                 data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
                 data.save()
