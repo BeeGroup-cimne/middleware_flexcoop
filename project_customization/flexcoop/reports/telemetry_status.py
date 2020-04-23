@@ -221,7 +221,7 @@ class TelemetryStatusReport(OadrReport):
             TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             send_thread = threading.Thread(target=hypertech_send, args=(rid_i, value_i, dt_start_i))
-            #send_thread.start()
+            send_thread.start()
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
                 if device:
