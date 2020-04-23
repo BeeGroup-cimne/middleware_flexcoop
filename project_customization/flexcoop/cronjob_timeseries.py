@@ -241,12 +241,13 @@ def aggregate_timeseries(freq, now):
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
 def delete_raw_data():
+    now = datetime.utcnow()
     # search for all reporting devices
     devices = set()
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
-    # shall to delete all raw data, but leave the last timestep.
+    # shall to delete all raw data, but leave the last 2 timesteps.
     to_keep = {}
     for device in devices:
         print(device)
@@ -259,13 +260,17 @@ def delete_raw_data():
             except:
                 continue
             raw_model = get_data_model(key)
-            now = raw_model.__mongo__.find({"device_id": device}, sort=[("dtstart", -1)])
+            data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
             try:
-                if now.limit(1)[0]:
+                if data1[0]:
                     try:
-                        to_keep[key].append(now[0]['_id'])
+                        to_keep[key].append(data1[0]['_id'])
                     except:
-                        to_keep[key] = [now[0]['_id']]
+                        to_keep[key] = [data1[0]['_id']]
+                    try:
+                        to_keep[key].append(data1[1]['_id'])
+                    except:
+                        to_keep[key] = [data1[1]['_id']]
             except:
                 continue
     for key, value in to_keep.items():
@@ -277,7 +282,7 @@ def delete_raw_data():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
 
-    # shall to delete all raw data, but leave the last timestep.
+    # shall to delete all raw data, but leave the last 2 timestep.
     to_keep = {}
     for device in devices:
         print(device)
@@ -291,19 +296,22 @@ def delete_raw_data():
             except:
                 continue
             raw_model = get_data_model(database)
-            now = raw_model.__mongo__.find({"device_id": device}, sort=[("dtstart", -1)])
+            data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
             try:
-                if now.limit(1)[0]:
+                if data1[0]:
                     try:
-                        to_keep[database].append(now[0]['_id'])
+                        to_keep[database].append(data1[0]['_id'])
                     except:
-                        to_keep[database] = [now[0]['_id']]
+                        to_keep[database] = [data1[0]['_id']]
+                    try:
+                        to_keep[database].append(data1[1]['_id'])
+                    except:
+                        to_keep[database] = [data1[1]['_id']]
             except:
                 continue
     for key, value in to_keep.items():
         raw_model = get_data_model(key)
-        print(key)
-        print(list(raw_model.__mongo__.find({"_id":{"$nin": value}})))
+        raw_model.__mongo__.delete_many({"_id":{"$nin": value}})
 
 
 # Call this function every 15 min
