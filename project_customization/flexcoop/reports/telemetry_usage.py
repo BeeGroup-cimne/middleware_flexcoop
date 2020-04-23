@@ -224,7 +224,7 @@ class TelemetryUsageReport(OadrReport):
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
             send_thread = threading.Thread(target=hypertech_send, args=(rid_i, value_i, dtstart_i))
-            send_thread.start()
+            #send_thread.start()
             if mapping:
                 data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
                 data.save()
