@@ -14,9 +14,12 @@ from project_customization.flexcoop.utils import convert_snake_case
 
 import pandas as pd
 import numpy as np
+import pytz
 """We define the cronjobs to be executed to deal with the raw data recieved"""
 
 #define the final timeseries models:
+timezone = pytz.timezone("Europe/Madrid")
+
 def no_outliers_stats(series, lowq=2.5, highq=97.5):
   hh = series[(series <= np.nanquantile(series, highq/100))& (series >= np.nanquantile(series, lowq/100))]
   return {"mean": hh.mean(), "median": hh.median(), "std": hh.std()}
@@ -27,6 +30,7 @@ def clean_znorm_data(series, lowq=2.5, highq=97.5):
     return series[zscore < 10]
 
 def aggregate_device_status(now):
+    today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     for key, value in status_devices.items():
         raw_model = get_data_model(key)
@@ -77,6 +81,8 @@ def aggregate_device_status(now):
             device_df_final['timestamp'] = device_df_final.index.to_pydatetime()
             device_df_final['_created_at'] = datetime.utcnow()
             device_df_final['_updated_at'] = datetime.utcnow()
+            device_df_final = device_df_final[device_df_final.index >= today.replace(tzinfo=None)]
+
             df_ini = min(device_df_final.index)
             df_max = max(device_df_final.index)
             documents = device_df_final.to_dict('records')
@@ -87,6 +93,7 @@ def aggregate_device_status(now):
 
 def aggregate_timeseries(freq, now):
     #search for all reporting devices
+    today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
@@ -196,6 +203,7 @@ def aggregate_timeseries(freq, now):
             indoor_sensing_final['timestamp'] = indoor_sensing_final.index.to_pydatetime()
             indoor_sensing_final['_created_at'] = datetime.utcnow()
             indoor_sensing_final['_updated_at'] = datetime.utcnow()
+            indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= today.replace(tzinfo=None)]
             df_ini = min(indoor_sensing_final.index)
             df_max = max(indoor_sensing_final.index)
             documents = indoor_sensing_final.to_dict('records')
@@ -213,6 +221,8 @@ def aggregate_timeseries(freq, now):
             occupancy_final['timestamp'] = occupancy_final.index.to_pydatetime()
             occupancy_final['_created_at'] = datetime.utcnow()
             occupancy_final['_updated_at'] = datetime.utcnow()
+            occupancy_final = occupancy_final[occupancy_final.index >= today.replace(tzinfo=None)]
+
             df_ini = min(occupancy_final.index)
             df_max = max(occupancy_final.index)
             documents = occupancy_final.to_dict('records')
@@ -231,6 +241,7 @@ def aggregate_timeseries(freq, now):
             meter_final['timestamp'] = meter_final.index.to_pydatetime()
             meter_final['_created_at'] = datetime.utcnow()
             meter_final['_updated_at'] = datetime.utcnow()
+            meter_final = meter_final[meter_final.index >= today.replace(tzinfo=None)]
             df_ini = min(meter_final.index)
             df_max = max(meter_final.index)
             documents = meter_final.to_dict('records')
