@@ -252,7 +252,8 @@ def aggregate_timeseries(freq, now):
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
 def delete_raw_data():
-    now = datetime.utcnow()
+    now = datetime.now()
+    now = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     # search for all reporting devices
     devices = set()
     for key, value in timeseries_mapping.items():
