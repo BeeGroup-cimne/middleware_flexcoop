@@ -8,11 +8,29 @@ from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case, get_middleware_token
 from flask import request
+import threading
 
 from project_customization.flexcoop.timeseries_utils import timeseries_mapping
 
-hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
-hypertech_cert = False
+
+
+def hypertech_send(rid_i, value_i, dtstart_i):
+    hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
+    hypertech_cert = False
+    #hypertech_direct_send:
+    try:
+        with requests.Session() as s:
+            hypertech_json = {
+                "rId": rid_i,
+                "value": value_i,
+                "timestamp": dtstart_i
+            }
+            token = get_middleware_token()
+            headers = {'Authorization': token}
+            s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
+    except:
+        pass
+
 def get_report_models():
     class TelemetryUsageReportModel(MongoDB):
         "A telemetry report"
@@ -205,19 +223,8 @@ class TelemetryUsageReport(OadrReport):
                 return
             TMP = get_data_model(convert_snake_case(metric))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
-            # hypertech_direct_send:
-            # try:
-            #     with requests.Session() as s:
-            #         hypertech_json = {
-            #             "rId": rid_i,
-            #             "value": value_i,
-            #             "timestamp": dtstart_i
-            #         }
-            #         token = get_middleware_token()
-            #         headers = {'Authorization': token}
-            #         s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-            # except:
-            #     pass
+            send_thread = threading.Thread(target=hypertech_send, args=(rid_i, value_i, dtstart_i))
+            send_thread.start()
             if mapping:
                 data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
                 data.save()

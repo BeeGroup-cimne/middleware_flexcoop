@@ -1,3 +1,4 @@
+import datetime
 import re
 import uuid
 import requests
@@ -37,12 +38,56 @@ def convert_camel_case(name):
     # with the 'title' method and join them together.
     return ''.join(x.title() for x in components)
 
+
+class ServiceToken(object):
+    """
+        A singleton instance object providing access to a middleware service token
+        via
+          token =  ServiceToken():get_token()
+        Hardcoded version of rest api one
+        The class caches the retrieved access token until 5 minutes before expiration to minimise network traffic
+    """
+    class _ServiceToken(object):
+        def __init__(self):
+            self.token = None
+            self.exp = None
+            self.token_url = "/token"
+            self.client = CLIENT
+            self.secret = SECRET
+            self.oauth = OAUTH_PROVIDERS[CLIENT_OAUTH]['url']
+            self.cert = OAUTH_PROVIDERS[CLIENT_OAUTH]['cert']
+
+        def __str__(self):
+            return repr(self)
+
+        def get_token(self):
+            if self.token:
+                if datetime.datetime.utcnow() <= self.exp:
+                    return self.token
+
+            login = {'grant_type': 'client_credentials', 'client_id': self.client, 'client_secret': self.secret}
+            response = requests.post(self.oauth+"/"+self.token_url, data=login, verify=self.cert)
+            if response.ok:
+                self.token = response.json()['access_token']
+                self.exp = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+                return self.token
+            else:
+                raise Exception("Bad Oauth response during ServiceToken().get_token() : "+response.text)
+
+    instance = None
+
+    def __init__(self):
+        if not ServiceToken.instance:
+            ServiceToken.instance = ServiceToken._ServiceToken()
+
+    def __getattr__(self, name):
+        return getattr(self.instance, name)
+
+
 def get_middleware_token():
-    client = CLIENT
-    secret = SECRET
-    login = {'grant_type': 'client_credentials', 'client_id': client, 'client_secret': secret}
-    response = requests.post("{}/token".format(OAUTH_PROVIDERS[CLIENT_OAUTH]['url']), data=login, verify=OAUTH_PROVIDERS[CLIENT_OAUTH]['cert'])
-    if response.ok:
-        return response.json()['access_token']
+    stoken = ServiceToken()
+    token = stoken.get_token()
+    if token:
+        return token
     else:
         raise Exception("Oauth client not found")

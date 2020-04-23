@@ -11,9 +11,24 @@ from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id, Device
 from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case, \
     get_middleware_token
+import threading
+def hypertech_send(rid_i, value_i, dtstart_i):
+    hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
+    hypertech_cert = False
+    #hypertech_direct_send:
+    try:
+        with requests.Session() as s:
+            hypertech_json = {
+                "rId": rid_i,
+                "value": value_i,
+                "timestamp": dtstart_i
+            }
+            token = get_middleware_token()
+            headers = {'Authorization': token}
+            s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
+    except:
+        pass
 
-hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
-hypertech_cert = False
 def get_data_model(element):
     class ReportDataModel(MongoDB):
         "A telemetry usage report data"
@@ -205,20 +220,8 @@ class TelemetryStatusReport(OadrReport):
                 continue
             TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
-            # hypertech_direct_send:
-            # try:
-            #     with requests.Session() as s:
-            #         hypertech_json = {
-            #             "rId": rid_i,
-            #             "value": value_i,
-            #             "timestamp": dt_start_i
-            #         }
-            #         token = get_middleware_token()
-            #         headers = {'Authorization': token}
-            #         resp = s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-            #         print(resp)
-            # except:
-            #     pass
+            send_thread = threading.Thread(target=hypertech_send, args=(rid_i, value_i, dtstart_i))
+            send_thread.start()
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
                 if device:
