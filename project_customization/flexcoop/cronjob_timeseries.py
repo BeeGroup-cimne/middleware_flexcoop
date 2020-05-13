@@ -24,10 +24,20 @@ def no_outliers_stats(series, lowq=2.5, highq=97.5):
   hh = series[(series <= np.nanquantile(series, highq/100))& (series >= np.nanquantile(series, lowq/100))]
   return {"mean": hh.mean(), "median": hh.median(), "std": hh.std()}
 
-def clean_znorm_data(series, lowq=2.5, highq=97.5):
+def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
     stats = no_outliers_stats(series, lowq, highq)
     zscore = np.abs( (series - stats['median']) / stats['std'])
-    return series[zscore < 10]
+    return series[zscore < th]
+
+def clean_threshold_data(series, min_th=None, max_th=None):
+    if min_th and max_th:
+        return series[(min_th<=series) & (series<=max_th)]
+    elif min_th:
+        return series[series >= min_th]
+    elif max_th:
+        return series[series <= max_th]
+    else:
+        return series
 
 def aggregate_device_status(now):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
@@ -137,7 +147,13 @@ def aggregate_timeseries(freq, now):
                         continue
                     data_clean = df.resample("1s").mean().interpolate().resample(freq).mean().diff().dropna()
                     if value['cleaning']:
-                        data_clean.value = clean_znorm_data(data_clean.value)
+                        for method, parameters in value['cleaning'].items():
+                            if method == "znorm":
+                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
+                            elif method == "threshold":
+                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
+
+
                 else:
                     data_clean = pd.DataFrame()
 
@@ -153,7 +169,12 @@ def aggregate_timeseries(freq, now):
                         continue
                     data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
                     if value['cleaning']:
-                        data_clean.value = clean_znorm_data(data_clean.value)
+                        for method, parameters in value['cleaning'].items():
+                            if method == "znorm":
+                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
+                            elif method == "threshold":
+                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
+
                 elif value['operation'] == "FIRST":
                     # first is applied to all types
                     data_clean = df.resample("1s").pad().dropna().resample(freq).first()
@@ -168,7 +189,12 @@ def aggregate_timeseries(freq, now):
 
                     data_clean = df.resample("1s").pad().dropna().resample(freq).max()
                     if value['cleaning']:
-                        data_clean.value = clean_znorm_data(data_clean.value)
+                        for method, parameters in value['cleaning'].items():
+                            if method == "znorm":
+                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
+                            elif method == "threshold":
+                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
+
                 else:
                     data_clean = pd.DataFrame()
 
@@ -260,7 +286,6 @@ def delete_raw_data():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
     # shall to delete all raw data, but leave the last 2 timesteps.
-    to_keep = {}
     for device in devices:
         print(device)
         point = DataPoint.find_one({"device_id": device})
@@ -273,21 +298,18 @@ def delete_raw_data():
                 continue
             raw_model = get_data_model(key)
             data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
+            delete_date = None
             try:
                 if data1[0]:
                     try:
-                        to_keep[key].append(data1[0]['_id'])
+                        delete_date = data1[1]['dtstart']
                     except:
-                        to_keep[key] = [data1[0]['_id']]
-                    try:
-                        to_keep[key].append(data1[1]['_id'])
-                    except:
-                        to_keep[key] = [data1[1]['_id']]
+                        delete_date = data1[0]['dtstart']
             except:
                 continue
-    for key, value in to_keep.items():
-        raw_model = get_data_model(key)
-        raw_model.__mongo__.delete_many({"_id":{"$nin": value}})
+
+            if delete_date:
+                raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt":delete_date}})
 
     devices = set()
     for key, value in status_devices.items():
@@ -295,7 +317,6 @@ def delete_raw_data():
         devices.update(raw_model.__mongo__.distinct("device_id"))
 
     # shall to delete all raw data, but leave the last 2 timestep.
-    to_keep = {}
     for device in devices:
         print(device)
         point = Device.find_one({"device_id": device})
@@ -309,22 +330,18 @@ def delete_raw_data():
                 continue
             raw_model = get_data_model(database)
             data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
+            delete_date = None
             try:
                 if data1[0]:
                     try:
-                        to_keep[database].append(data1[0]['_id'])
+                        delete_date = data1[1]['dtstart']
                     except:
-                        to_keep[database] = [data1[0]['_id']]
-                    try:
-                        to_keep[database].append(data1[1]['_id'])
-                    except:
-                        to_keep[database] = [data1[1]['_id']]
+                        delete_date = data1[0]['dtstart']
             except:
                 continue
-    for key, value in to_keep.items():
-        raw_model = get_data_model(key)
-        raw_model.__mongo__.delete_many({"_id":{"$nin": value}})
 
+            if delete_date:
+                raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
 
 # Call this function every 15 min
 def clean_data():
