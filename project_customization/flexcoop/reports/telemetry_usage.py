@@ -236,6 +236,7 @@ class TelemetryUsageReport(OadrReport):
             else:
                 exception = InvalidReportException("The device {} has not been registered".format(rid_i))
 
+        app.logger.debug("hola")
         send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data))
         send_thread.start()
 
