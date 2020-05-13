@@ -20,8 +20,6 @@ def hypertech_send(data):
     #hypertech_direct_send:
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger("Hypertech")
-    log.setLevel(logging.DEBUG)
-    log.debug('****************')
     for d in data:
         try:
             with requests.Session() as s:
@@ -33,7 +31,8 @@ def hypertech_send(data):
                 token = get_middleware_token()
                 headers = {'Authorization': token}
                 s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-        except:
+        except Exception as e:
+            log.debug(e)
             pass
 
 def get_report_models():
