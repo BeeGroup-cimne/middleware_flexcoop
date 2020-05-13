@@ -19,7 +19,7 @@ def hypertech_send(data):
     hypertech_cert = False
     #hypertech_direct_send:
     log = logging.getLogger("Hypertech")
-    log.setLevel("DEBUG")
+    log.setLevel(logging.DEBUG)
     log.debug('****************')
     for d in data:
         try:
