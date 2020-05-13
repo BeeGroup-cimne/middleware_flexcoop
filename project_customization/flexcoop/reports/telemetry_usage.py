@@ -20,7 +20,7 @@ def hypertech_send(data):
     #hypertech_direct_send:
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger("Hypertech")
-    log.debug(data)
+    log.debug(type(data))
     for d in data:
         try:
             with requests.Session() as s:
@@ -237,7 +237,7 @@ class TelemetryUsageReport(OadrReport):
             else:
                 exception = InvalidReportException("The device {} has not been registered".format(rid_i))
 
-        app.logger.debug("hola")
+        app.logger.debug(type(hypertech_data))
         send_thread = threading.Thread(target=hypertech_send, args=hypertech_data)
         send_thread.start()
 
