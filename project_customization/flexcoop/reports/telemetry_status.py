@@ -2,7 +2,7 @@ import re
 from builtins import hasattr
 
 import requests
-from flask import request
+from flask import request, current_app as app
 
 from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
@@ -20,6 +20,7 @@ def hypertech_send(data):
     #hypertech_direct_send:
     logger.critical("#################")
     logger.critical("data =", len(data))
+    app.logger.debug('****************')
     for d in data:
         try:
             with requests.Session() as s:
