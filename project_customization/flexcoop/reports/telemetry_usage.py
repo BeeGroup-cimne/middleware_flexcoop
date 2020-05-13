@@ -7,7 +7,7 @@ from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
 from oadr_core.oadr_payloads.reports.report import OadrReport
 from project_customization.flexcoop.models import map_rid_device_id
 from project_customization.flexcoop.utils import parse_rid, get_id_from_rid, convert_snake_case, get_middleware_token
-from flask import request
+from flask import request, current_app as app
 import threading
 
 from project_customization.flexcoop.timeseries_utils import timeseries_mapping
@@ -18,6 +18,7 @@ def hypertech_send(data):
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
+    app.logger.debug('****************')
     for d in data:
         try:
             with requests.Session() as s:

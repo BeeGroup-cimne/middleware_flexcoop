@@ -14,12 +14,9 @@ from project_customization.flexcoop.utils import parse_rid, status_mapping, get_
 import threading
 import logging
 def hypertech_send(data):
-    logger = logging.getLogger("AAAA")
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
-    logger.critical("#################")
-    logger.critical("data =", len(data))
     app.logger.debug('****************')
     for d in data:
         try:
