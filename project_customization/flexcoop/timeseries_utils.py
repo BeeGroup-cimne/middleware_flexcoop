@@ -84,13 +84,13 @@ class device_status(timeseries):
         super(device_status, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
 timeseries_mapping = {
-    "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":"10", "threshold": [-90, 90]}},
-    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning": {"znorm":"10", "threshold": [-90, 90]}},
-    "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":"10" ,"threshold":[-90, 90]}},
+    "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":10, "threshold": [-90, 90]}},
+    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning": {"znorm":10, "threshold": [-90, 90]}},
+    "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":10 ,"threshold":[-90, 90]}},
     "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":"10", "threshold": [0, None]}},
-    "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":"10", "threshold": [0, None]}},
-    "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": "10", "threshold": [0, None]}},
-    "humidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": "10", "threshold": [0, None]}},
+    "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":10, "threshold": [0, None]}},
+    "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": 10, "threshold": [0, None]}},
+    "humidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": 10, "threshold": [0, None]}},
     "airquality": {"class": indoor_sensing, "field": "airquality", "operation": "FIRST", "cleaning": False},
     "tvoc": {"class": indoor_sensing, "field": "tvoc", "operation": "MAX", "cleaning": False},
 
