@@ -12,10 +12,14 @@ from project_customization.flexcoop.models import map_rid_device_id, Device
 from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case, \
     get_middleware_token
 import threading
+import logging
 def hypertech_send(data):
+    logger = logging.getLogger("AAAA")
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
+    logger.critical("#################")
+    logger.critical("data =", len(data))
     for d in data:
         try:
             with requests.Session() as s:
