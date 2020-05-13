@@ -13,11 +13,13 @@ from project_customization.flexcoop.utils import parse_rid, status_mapping, get_
     get_middleware_token
 import threading
 import logging
+
 def hypertech_send(data):
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
-    app.logger.debug('****************')
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger("Hypertech")
     for d in data:
         try:
             with requests.Session() as s:
@@ -29,8 +31,8 @@ def hypertech_send(data):
                 token = get_middleware_token()
                 headers = {'Authorization': token}
                 s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-        except:
-            pass
+        except Exception as e:
+            log.debug("***********", e)
 
 def get_data_model(element):
     class ReportDataModel(MongoDB):
@@ -240,7 +242,7 @@ class TelemetryStatusReport(OadrReport):
             else:
                 exception = InvalidReportException("The device {} does not exist".format(rid_i))
 
-        send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data))
+        send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data,))
         send_thread.start()
 
         if exception:

@@ -20,7 +20,6 @@ def hypertech_send(data):
     #hypertech_direct_send:
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger("Hypertech")
-    log.debug(type(data))
     for d in data:
         try:
             with requests.Session() as s:
@@ -33,8 +32,7 @@ def hypertech_send(data):
                 headers = {'Authorization': token}
                 s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
         except Exception as e:
-            log.debug(e)
-            pass
+            log.debug("***********", e)
 
 def get_report_models():
     class TelemetryUsageReportModel(MongoDB):
@@ -237,7 +235,6 @@ class TelemetryUsageReport(OadrReport):
             else:
                 exception = InvalidReportException("The device {} has not been registered".format(rid_i))
 
-        app.logger.debug(type(hypertech_data))
         send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data,))
         send_thread.start()
 
