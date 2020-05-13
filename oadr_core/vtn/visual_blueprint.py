@@ -146,7 +146,6 @@ def create_vtn_events():
     form=EventForm()
     if request.method=="POST":
         form = EventForm(request.form)
-        print(request.form)
         if form.validate():
             data = request.form
             description_dt_start = datetime.strptime(data['description-dtstart'], "%Y-%m-%d %H:%M:%S") if data['description-dtstart'] else None
@@ -157,7 +156,6 @@ def create_vtn_events():
                           description_testEvent, data['description-vtnComment'], description_dt_start,
                           data['description-duration'], data['description-tolerance'], data['description-eiNotification'],
                           data['description-eiRampUp'], data['description-eiRecovery'], data['description-target'],  data['description-responseRequired'])
-            print(event)
             event.save()
             signal = EventSignal(event._id, data['signal-target'], data['signal-signalID'], data['signal-signalType'], data['signal-signalName'], data['signal-currentValue'])
             signal.save()
@@ -166,6 +164,6 @@ def create_vtn_events():
             send_message(OadrDistributeEvent(), VEN.find_one({VEN.ven_id():data['ven']}), {'event_list':[event], "requestID": "1"})
             return redirect(url_for("visual.view_vtn_events"))
         else:
-            print("A")
+            pass
     return render_template("web/events/create_events.html", form=form)
 

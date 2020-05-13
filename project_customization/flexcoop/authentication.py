@@ -35,13 +35,12 @@ class KeyCache(object):
                         key_list = requests.get(key_url, verify=provider_info['cert']).json()
                         for key in key_list['keys']:
                             self.keys.append({"key": jwk_from_dict(key), "iss": provider_info['url'], "kid": key['kid']})
-                        print("Provider {} correctly configured".format(provider))
                     else:
-                        print("Error connecting with the provider {}: provided returned {}".format(provider,p_info.reason))
+                        pass
                 except RequestException as e:
-                    print("Error connecting with the provider {}: provider not found".format(provider))
+                    pass
                 except TypeError as e:
-                    print("Error connecting with the provider {}: incorrect format of provider key".format(provider))
+                    pass
             if not self.keys:
                 raise ProviderNotFoundException("No provider found")
             return self.keys

@@ -75,10 +75,8 @@ def openADR_VTN_service(service):
             if message == "oadrUpdateReport":
                 try:
                     value = payload.find(".//ei:rID", namespaces=NAMESPACES).text
-                    print(value)
                 except:
-                    print("notvalid rid query")
-
+                    pass
             return response, 200, {'Content-Type': 'text/xml; charset=utf-8'}
         except KeyError as e:
             abort(Response("The message {} can't be found for this service {}".format(message, service), 400))

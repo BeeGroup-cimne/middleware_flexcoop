@@ -30,7 +30,6 @@ class OadrCreatedEvent(OadrMessage):
                     # TODO: CHECK OADR EVENTS RESPONSES
                     requestID = response.find(".//pyld:requestID")
                     opt_type = response.find(".//ei:optType")
-                    print("{} says {}".format(requestID, opt_type))
 
         if requestID is None: # we don't have any eventResponse
             requestID = eiResponse.find(".//pyld:requestID")

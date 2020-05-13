@@ -180,7 +180,7 @@ def oadrUpdateReport(requestID, reports_dic, venID):
             oadr_update_element.append(report.create(requestID, report['specifierID'], datetime.utcnow().isoformat(), report['reportID'],
                                                                   report['dtstart'], report['duration'], report['intervals']))
         except Exception as e:
-            print("The report {} is not supported and is being ignored".format(report['type']))
+            pass
     return oadr_update_element
 
 def oadrUpdatedReport(code, description, requestID, cancelReport, venID):

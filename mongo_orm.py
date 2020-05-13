@@ -75,8 +75,7 @@ class MongoDB(object, metaclass=MongoMeta):
                 obj_dict.update({"_created_at": datetime.utcnow(), "_updated_at": datetime.utcnow()})
                 self._id = self.__mongo__.insert_one(obj_dict).inserted_id
         except Exception as e:
-            print(type(e))
-            print(e)
+            pass
 
     def delete(self):
         self.__mongo__.delete_one({"_id":self._id})

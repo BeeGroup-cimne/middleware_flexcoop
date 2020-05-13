@@ -66,10 +66,9 @@ class OadrRegisterReport(OadrMessage):
                 from project_customization.base_customization import project_configuration
                 project_configuration.on_OadrRegisterReport_response(response_code, responseDescription, venID, oadrReportRequest)
             except InvalidVenException as e:
-                print("Recieved an invalid VEN")
+                pass
             except InvalidResponseException as e:
-                print("Invalid response with code {} due to {}".format(e.code, e.description))
-
+                pass
 
 class OadrRegisteredReport(OadrMessage):
     """Class to deal with the report registration
@@ -91,12 +90,10 @@ class OadrRegisteredReport(OadrMessage):
         except InvalidVenException as e:
             code = e.code
             description = e.description
-            print("Recieved an invalid VEN")
 
         except InvalidResponseException as e:
             code = e.code
             description = e.description
-            print("Invalid response with code {} due to {}".format(e.code, e.description))
 
         content = oadrResponse(code, description, str(requestID), venID)
         return oadrPayload(content)
@@ -163,7 +160,7 @@ class OadrCreatedReport(OadrMessage):
 
             project_configuration.on_OadrCreatedReport_response(venID, responseCode, responseDescription)
         except InvalidResponseException as e:
-            print(e)
+            pass
 
 class OadrUpdateReport(OadrMessage):
     def _create_response(self, params):
@@ -218,7 +215,7 @@ class OadrUpdateReport(OadrMessage):
 
             project_configuration.on_OadrUpdateReport_response(venID, responseCode, responseDescription, cancelReports)
         except InvalidResponseException as e:
-            print(e)
+            pass
 
 class OadrUpdatedReport(OadrMessage):
     def _create_response(self, params):
@@ -237,7 +234,7 @@ class OadrUpdatedReport(OadrMessage):
 
             code, description = project_configuration.on_OadrUpdatedReport_recieved(venID, responseCode, responseDescription, cancelReports)
         except InvalidResponseException as e:
-            print(e)
+            pass
         content = oadrResponse(code, description, str(requestID), venID)
         return oadrPayload(content)
 
@@ -353,7 +350,6 @@ class OadrCancelReport(OadrMessage):
         except InvalidResponseException as e:
             code = e.code
             description = e.description
-            print(description)
 
 
 class OadrCanceledReport(OadrMessage):

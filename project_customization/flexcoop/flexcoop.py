@@ -126,7 +126,6 @@ class FlexcoopCustomization():
             register_reports.append((report, register_data_points))
 
         if register_reports:
-            print("subscriving to reports")
             createReport = OadrCreateReport()
             report_types = [{"reportId": x.ei_report_id,
                              "specifierId": x.specifier_id,
@@ -200,7 +199,6 @@ class FlexcoopCustomization():
             except KeyError as e:
                 raise InvalidReportException("unsuported report {}: {}".format(type_r, e))
             except Exception as e:
-                print(traceback.format_exc())
                 raise InvalidReportException("error in report")
 
 
@@ -306,8 +304,6 @@ class FlexcoopCustomization():
                 report_type.parse(report)
                 # TODO Report Send to Hypertech
             except Exception as e:
-                print(e)
-                print("Recieved unsuported report {}".format(type_r))
                 raise InvalidReportException("unsuported report {}".format(type_r))
         #TODO: get list of canceled reports
         cancel_reports = None

@@ -12,12 +12,9 @@ class OadrMessage():
 
     def respond(self, params):
         if self._schema_val(params):
-            print("schema_valid")
             return self._create_response(params)
         else:
-            print("schema_invalid")
             log = self._schema_val.error_log
-            print(log.last_error)
             raise SyntaxError(log.last_error)
 
     def _create_response(self, params):
