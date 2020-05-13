@@ -136,7 +136,7 @@ def aggregate_timeseries(freq, now):
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
-
+            df = df.loc[~df.index.duplicated(keep='last')]
             print("readed data")
             if reading_type == "Direct Read":
                 if value['operation'] == "SUM":
