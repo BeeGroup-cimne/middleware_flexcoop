@@ -20,6 +20,7 @@ def hypertech_send(data):
     #hypertech_direct_send:
     logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger("Hypertech")
+    log.debug(data)
     for d in data:
         try:
             with requests.Session() as s:
