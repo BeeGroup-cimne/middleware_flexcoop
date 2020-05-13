@@ -18,6 +18,7 @@ def hypertech_send(data):
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
+    logging.basicConfig(level=logging.DEBUG)
     log = logging.getLogger("Hypertech")
     log.setLevel(logging.DEBUG)
     log.debug('****************')
