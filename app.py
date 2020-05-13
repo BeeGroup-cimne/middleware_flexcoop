@@ -32,7 +32,7 @@ def send_events():
         pass
 
 if __name__ == '__main__':
-    app.run(host=settings.HOST, port=settings.PORT)
+    app.run(host=settings.HOST, port=settings.PORT, debug=True)
 
 """
 import requests
