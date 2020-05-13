@@ -87,7 +87,7 @@ timeseries_mapping = {
     "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":10, "threshold": [-90, 90]}},
     "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning": {"znorm":10, "threshold": [-90, 90]}},
     "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": {"znorm":10 ,"threshold":[-90, 90]}},
-    "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":"10", "threshold": [0, None]}},
+    "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":10, "threshold": [0, None]}},
     "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": {"znorm":10, "threshold": [0, None]}},
     "sensor_relhumidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": 10, "threshold": [0, None]}},
     "humidity": {"class": indoor_sensing, "field": "relhumidity", "operation": "AVG", "cleaning": {"znorm": 10, "threshold": [0, None]}},
@@ -98,13 +98,13 @@ timeseries_mapping = {
     "motion": {"class": occupancy, "field": "occupancy", "operation": "AVG", "cleaning": False},
 
     "meter_current": {"class": meter, "field": "current", "operation": "AVG",
-                      "cleaning": {"znorm": "10", "threshold": [0, None]}},
+                      "cleaning": {"znorm": 10, "threshold": [0, None]}},
     "meter_kwh": {"class": meter, "field": "kwh", "operation": "SUM",
-                  "cleaning": {"znorm": "10", "threshold": [0, None]}},
+                  "cleaning": {"znorm": 10, "threshold": [0, None]}},
     "meter_voltage": {"class": meter, "field": "voltage", "operation": "AVG",
-                      "cleaning": {"znorm": "10", "threshold": [0, None]}},
+                      "cleaning": {"znorm": 10, "threshold": [0, None]}},
     "meter_watts": {"class": meter, "field": "watts", "operation": "AVG",
-                    "cleaning": {"znorm": "10", "threshold": [0, None]}},
+                    "cleaning": {"znorm": 10, "threshold": [0, None]}},
 }
 
 status_devices = {
