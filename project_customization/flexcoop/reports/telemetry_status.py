@@ -12,22 +12,23 @@ from project_customization.flexcoop.models import map_rid_device_id, Device
 from project_customization.flexcoop.utils import parse_rid, status_mapping, get_id_from_rid, convert_snake_case, \
     get_middleware_token
 import threading
-def hypertech_send(rid_i, value_i, dtstart_i):
+def hypertech_send(data):
     hypertech_url = "https://adsl.hypertech.gr:444/flexcoop/services/middlewareData"
     hypertech_cert = False
     #hypertech_direct_send:
-    try:
-        with requests.Session() as s:
-            hypertech_json = {
-                "rId": rid_i,
-                "value": value_i,
-                "timestamp": dtstart_i
-            }
-            token = get_middleware_token()
-            headers = {'Authorization': token}
-            s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
-    except:
-        pass
+    for d in data:
+        try:
+            with requests.Session() as s:
+                hypertech_json = {
+                    "rId": d['rid'],
+                    "value": d['value'],
+                    "timestamp": d['dt']
+                }
+                token = get_middleware_token()
+                headers = {'Authorization': token}
+                s.post(hypertech_url, headers=headers, json=hypertech_json, verify=hypertech_cert)
+        except:
+            pass
 
 def get_data_model(element):
     class ReportDataModel(MongoDB):
@@ -193,6 +194,8 @@ class TelemetryStatusReport(OadrReport):
         r.save()
         report_id = r._id
         intervals = oadrReport.find(".//strm:intervals", namespaces=NAMESPACES)
+        hypertech_data = []
+        exception = None
         for interval in intervals.findall(".//ei:interval", namespaces=NAMESPACES):
             # We will only update the status to the Device endpoint
             dt_start = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
@@ -220,8 +223,7 @@ class TelemetryStatusReport(OadrReport):
                 continue
             TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
-            send_thread = threading.Thread(target=hypertech_send, args=(rid_i, value_i, dt_start_i))
-            send_thread.start()
+            hypertech_data.append({"rid": rid_i, "value": value_i, "dt": dt_start_i})
             if mapping:
                 device = Device.find_one({Device.device_id(): mapping.device_id})
                 if device:
@@ -231,9 +233,13 @@ class TelemetryStatusReport(OadrReport):
                                dataQuality_i, value_i)
                     data.save()
                 else:
-                    raise InvalidReportException("The device {} does not exist".format(rid_i))
+                    exception = InvalidReportException("The device {} does not exist".format(rid_i))
 
             else:
-                raise InvalidReportException("The device {} does not exist".format(rid_i))
+                exception = InvalidReportException("The device {} does not exist".format(rid_i))
 
+        send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data))
+        send_thread.start()
 
+        if exception:
+            raise exception
