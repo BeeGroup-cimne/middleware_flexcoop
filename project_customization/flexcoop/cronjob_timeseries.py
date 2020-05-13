@@ -230,12 +230,13 @@ def aggregate_timeseries(freq, now):
             indoor_sensing_final['_created_at'] = datetime.utcnow()
             indoor_sensing_final['_updated_at'] = datetime.utcnow()
             indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= today.replace(tzinfo=None)]
-            df_ini = min(indoor_sensing_final.index)
-            df_max = max(indoor_sensing_final.index)
-            documents = indoor_sensing_final.to_dict('records')
-            print("writting_sensing_data {}".format(len(documents)))
-            indoor_sensing.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-            indoor_sensing.__mongo__.insert_many(documents)
+            if not indoor_sensing_final.empty:
+                df_ini = min(indoor_sensing_final.index)
+                df_max = max(indoor_sensing_final.index)
+                documents = indoor_sensing_final.to_dict('records')
+                print("writting_sensing_data {}".format(len(documents)))
+                indoor_sensing.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+                indoor_sensing.__mongo__.insert_many(documents)
 
         if occupancy_df:
             occupancy_final = occupancy_df.pop(0)
@@ -248,14 +249,14 @@ def aggregate_timeseries(freq, now):
             occupancy_final['_created_at'] = datetime.utcnow()
             occupancy_final['_updated_at'] = datetime.utcnow()
             occupancy_final = occupancy_final[occupancy_final.index >= today.replace(tzinfo=None)]
-
-            df_ini = min(occupancy_final.index)
-            df_max = max(occupancy_final.index)
-            documents = occupancy_final.to_dict('records')
-            print("writting_occupancy_data {}".format(len(documents)))
-            occupancy.__mongo__.delete_many(
-                {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-            occupancy.__mongo__.insert_many(documents)
+            if not occupancy_final.empty:
+                df_ini = min(occupancy_final.index)
+                df_max = max(occupancy_final.index)
+                documents = occupancy_final.to_dict('records')
+                print("writting_occupancy_data {}".format(len(documents)))
+                occupancy.__mongo__.delete_many(
+                    {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+                occupancy.__mongo__.insert_many(documents)
 
         if meter_df:
             meter_final = meter_df.pop(0)
@@ -268,13 +269,14 @@ def aggregate_timeseries(freq, now):
             meter_final['_created_at'] = datetime.utcnow()
             meter_final['_updated_at'] = datetime.utcnow()
             meter_final = meter_final[meter_final.index >= today.replace(tzinfo=None)]
-            df_ini = min(meter_final.index)
-            df_max = max(meter_final.index)
-            documents = meter_final.to_dict('records')
-            print("writting_meter_data {}".format(len(documents)))
-            meter.__mongo__.delete_many(
-                {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-            meter.__mongo__.insert_many(documents)
+            if not meter_final.empty:
+                df_ini = min(meter_final.index)
+                df_max = max(meter_final.index)
+                documents = meter_final.to_dict('records')
+                print("writting_meter_data {}".format(len(documents)))
+                meter.__mongo__.delete_many(
+                    {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+                meter.__mongo__.insert_many(documents)
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
 def delete_raw_data():
