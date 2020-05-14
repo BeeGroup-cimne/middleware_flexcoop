@@ -124,14 +124,15 @@ def aggregate_timeseries(freq, now):
             except:
                 continue
             raw_model = get_data_model(key)
-            data = MongoDB.to_dict(raw_model.find({"device_id": device}))
+            data = MongoDB.to_dict(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
                 continue
             df = pd.DataFrame.from_records(data)
             # get the data_point information
             point_info = point.reporting_items[key]
             reading_type = point_info['reading_type']
-            df.index = pd.to_datetime(df.dtstart)
+            df.index = pd.to_datetime(df.dtstart, errors='coerce')
+            df = df[~df.index.isna()]
             df = df.sort_index()
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
