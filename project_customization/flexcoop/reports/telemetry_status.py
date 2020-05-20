@@ -289,6 +289,7 @@ class TelemetryStatusReport(OadrReport):
             # calculate if some recent changes for the device
             now = datetime.utcnow() - timedelta(minutes=1)
             df2 = df[pd.to_datetime(df.dtstart) > now]
+            app.logger.debug(df2)
             if not df2.empty:
                 grouped = df2.groupby("device_id")
                 for device_id, g in grouped:
