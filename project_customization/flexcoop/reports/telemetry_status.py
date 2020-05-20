@@ -290,13 +290,15 @@ class TelemetryStatusReport(OadrReport):
             now = datetime.utcnow() - timedelta(minutes=1)
             df2 = df[pd.to_datetime(df.dtstart) > now]
             app.logger.debug("*****************************")
-            app.logger.debug(df2)
-            app.logger.debug("*****************************")
             if not df2.empty:
                 grouped = df2.groupby("device_id")
                 for device_id, g in grouped:
                     max_value = g.loc[g.dtstart == g.dtstart.max()]
                     device = device_mappings[device_id]
+                    app.logger.debug(max_value)
+                    app.logger.debug(device)
+                    app.logger.debug(device_id)
+                    app.logger.debug("*****************************")
                     if device:
                         cvalue = max_value.value.values[0]
                         device.status[status_mapping[metric]].update({"value": cvalue})
