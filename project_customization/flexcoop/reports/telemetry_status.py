@@ -285,7 +285,7 @@ class TelemetryStatusReport(OadrReport):
                     return None
 
             df.device_id = df.device_id.apply(get_anonimized_id)
-
+            df = df.dropna(subset=['device_id'])
             # calculate if some recent changes for the device
             now = datetime.utcnow() - timedelta(minutes=1)
             df2 = df[pd.to_datetime(df.dtstart) > now]
@@ -295,10 +295,6 @@ class TelemetryStatusReport(OadrReport):
                 for device_id, g in grouped:
                     max_value = g.loc[g.dtstart == g.dtstart.max()]
                     device = device_mappings[device_id]
-                    app.logger.debug(max_value)
-                    app.logger.debug(device)
-                    app.logger.debug(device_id)
-                    app.logger.debug("*****************************")
                     if device:
                         cvalue = max_value.value.values[0]
                         device.status[status_mapping[metric]].update({"value": cvalue})

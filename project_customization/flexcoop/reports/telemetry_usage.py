@@ -1,4 +1,7 @@
+import pandas as pd
 import re
+from datetime import datetime
+
 import requests
 
 from mongo_orm import MongoDB, AnyField
@@ -201,7 +204,16 @@ class TelemetryUsageReport(OadrReport):
         report_id = r._id
         intervals = oadrReport.find(".//strm:intervals", namespaces=NAMESPACES)
         hypertech_data = []
+        mongo_data = {}
         exception = None
+        errors = []
+        try:
+            account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        except:
+            account_id = None
+            aggregator_id = None
+
         for interval in intervals.findall(".//ei:interval", namespaces=NAMESPACES):
             dtstart = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
             duration = interval.find(".//xcal:duration", namespaces=NAMESPACES)
@@ -223,20 +235,62 @@ class TelemetryUsageReport(OadrReport):
             accuracy_i = accuracy.text if accuracy is not None else ""
             data_quality_i = data_quality.text if data_quality is not None else ""
 
-            phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
-            if convert_snake_case(metric) not in timeseries_mapping.keys():
-                return
-            TMP = get_data_model(convert_snake_case(metric))
-            mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
+
             hypertech_data.append({"rid": rid_i, "value": value_i, "dt": dtstart_i})
-            if mapping:
-                data = TMP(mapping.device_id, report_id, dtstart_i, duration_i, uid_i, confidence_i, accuracy_i, data_quality_i, value_i, load)
-                data.save()
-            else:
-                exception = InvalidReportException("The device {} has not been registered".format(rid_i))
+
+            phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
+            metric = convert_snake_case(metric)
+            if metric not in timeseries_mapping.keys():
+                continue
+
+            json = {
+                "report_id": report_id,  #
+                "dtstart": dtstart_i,  #
+                "duration": duration_i,  #
+                "uid": uid_i,  #
+                "confidence": confidence_i,  #
+                "accuracy": accuracy_i,  #
+                "data_quality": data_quality_i,  #
+                "value": value_i,  #
+                "device_id": get_id_from_rid(rid_i),  #
+                "account_id": account_id,  #
+                "aggregator_id": aggregator_id,  #
+                "device_class": load,#
+                "_updated_at": datetime.utcnow(),  #
+                "_created_at": datetime.utcnow()  #
+            }
+
+            try:
+                mongo_data[metric].append(json)
+            except:
+                mongo_data[metric] = [json]
 
         send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data,))
         send_thread.start()
 
-        if exception:
-            raise exception
+        for metric, data in mongo_data.items():
+            df = pd.DataFrame.from_records(data)
+            id_mappings = {}
+            rids = df.device_id.unique()
+            for rid in rids:
+                mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): rid})
+                if mapping:
+                    id_mappings[rid] = mapping.device_id
+                else:
+                    errors.append(rid)
+                    id_mappings[rid] = None
+
+            def get_anonimized_id(rid):
+                try:
+                    return id_mappings[rid]
+                except:
+                    return None
+
+            df.device_id = df.device_id.apply(get_anonimized_id)
+
+            df = df.dropna(subset=['device_id'])
+
+            # save all historics
+            TMP = get_data_model(metric)
+            upload_data = df.to_dict(orient="records")
+            TMP.__mongo__.insert_many(upload_data)
