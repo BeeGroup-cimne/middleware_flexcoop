@@ -30,11 +30,11 @@ def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
     return series[zscore < th]
 
 def clean_threshold_data(series, min_th=None, max_th=None):
-    if min_th and max_th:
+    if min_th is not None and max_th is not None:
         return series[(min_th<=series) & (series<=max_th)]
-    elif min_th:
+    elif min_th is not None:
         return series[series >= min_th]
-    elif max_th:
+    elif max_th is not None:
         return series[series <= max_th]
     else:
         return series
@@ -101,10 +101,15 @@ def aggregate_device_status(now):
             device_status.__mongo__.insert_many(documents)
 
 
-def aggregate_timeseries(freq, now):
+def aggregate_timeseries(freq, now, period):
     #search for all reporting devices
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
+    if period == "backups":
+        last_period = today - timedelta(days=360)
+    else:
+        last_period = now - timedelta(hours=6)
+
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
@@ -124,21 +129,37 @@ def aggregate_timeseries(freq, now):
             except:
                 continue
             raw_model = get_data_model(key)
-            data = MongoDB.to_dict(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+            data = MongoDB.to_dict(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
-                continue
-            df = pd.DataFrame.from_records(data)
+                #no data in the last period, get the last value ever.
+                data = MongoDB.to_dict(raw_model.find({"device_id": device,
+                                                       "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+                if not data:
+                    continue
+                else:
+                    #get the last value of the request
+                    df = pd.DataFrame.from_records(data)
+                    df.index = pd.to_datetime(df.dtstart, errors='coerce')
+                    df = df[~df.index.isna()]
+                    df = df.sort_index()
+                    df = df.iloc[[-1]]
+
+            else:
+                df = pd.DataFrame.from_records(data)
+                df.index = pd.to_datetime(df.dtstart, errors='coerce')
+                df = df[~df.index.isna()]
+                df = df.sort_index()
+
             # get the data_point information
             point_info = point.reporting_items[key]
             reading_type = point_info['reading_type']
-            df.index = pd.to_datetime(df.dtstart, errors='coerce')
-            df = df[~df.index.isna()]
-            df = df.sort_index()
+
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
             df = df.loc[~df.index.duplicated(keep='last')]
             print("readed data")
+
             if reading_type == "Direct Read":
                 if value['operation'] == "SUM":
                     try:
@@ -230,7 +251,7 @@ def aggregate_timeseries(freq, now):
             indoor_sensing_final['timestamp'] = indoor_sensing_final.index.to_pydatetime()
             indoor_sensing_final['_created_at'] = datetime.utcnow()
             indoor_sensing_final['_updated_at'] = datetime.utcnow()
-            indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= today.replace(tzinfo=None)]
+            indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= last_period.replace(tzinfo=None)]
             if not indoor_sensing_final.empty:
                 df_ini = min(indoor_sensing_final.index)
                 df_max = max(indoor_sensing_final.index)
@@ -249,7 +270,7 @@ def aggregate_timeseries(freq, now):
             occupancy_final['timestamp'] = occupancy_final.index.to_pydatetime()
             occupancy_final['_created_at'] = datetime.utcnow()
             occupancy_final['_updated_at'] = datetime.utcnow()
-            occupancy_final = occupancy_final[occupancy_final.index >= today.replace(tzinfo=None)]
+            occupancy_final = occupancy_final[occupancy_final.index >= last_period.replace(tzinfo=None)]
             if not occupancy_final.empty:
                 df_ini = min(occupancy_final.index)
                 df_max = max(occupancy_final.index)
@@ -269,7 +290,7 @@ def aggregate_timeseries(freq, now):
             meter_final['timestamp'] = meter_final.index.to_pydatetime()
             meter_final['_created_at'] = datetime.utcnow()
             meter_final['_updated_at'] = datetime.utcnow()
-            meter_final = meter_final[meter_final.index >= today.replace(tzinfo=None)]
+            meter_final = meter_final[meter_final.index >= last_period.replace(tzinfo=None)]
             if not meter_final.empty:
                 df_ini = min(meter_final.index)
                 df_max = max(meter_final.index)
@@ -347,13 +368,13 @@ def delete_raw_data():
                 raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
 
 # Call this function every 15 min
-def clean_data():
-    aggregate_timeseries("15Min", datetime.utcnow())
+def clean_data(period):
+    aggregate_timeseries("15Min", datetime.utcnow(), period)
     aggregate_device_status(datetime.utcnow())
 
 if __name__ == "__main__":
     if sys.argv[2] == "clean":
-        clean_data()
+        clean_data(sys.argv[3])
     elif sys.argv[2] == "delete":
         delete_raw_data()
     else:

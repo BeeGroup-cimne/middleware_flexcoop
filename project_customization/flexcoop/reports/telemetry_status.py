@@ -1,5 +1,7 @@
+import pandas as pd
 import re
 from builtins import hasattr
+from datetime import datetime, timedelta
 
 import requests
 from flask import request, current_app as app
@@ -199,7 +201,16 @@ class TelemetryStatusReport(OadrReport):
         report_id = r._id
         intervals = oadrReport.find(".//strm:intervals", namespaces=NAMESPACES)
         hypertech_data = []
+        mongo_data = {}
         exception = None
+        errors = []
+        try:
+            account_id = request.cert['CN'] if hasattr(request, "cert") and 'CN' in request.cert else None
+            aggregator_id = request.cert['O'] if hasattr(request, "cert") and 'O' in request.cert else None
+        except:
+            account_id = None
+            aggregator_id = None
+
         for interval in intervals.findall(".//ei:interval", namespaces=NAMESPACES):
             # We will only update the status to the Device endpoint
             dt_start = interval.find(".//xcal:dtstart", namespaces=NAMESPACES)
@@ -222,28 +233,72 @@ class TelemetryStatusReport(OadrReport):
             accuracy_i = accuracy.text if accuracy is not None else ""
             dataQuality_i = dataQuality.text if dataQuality is not None else ""
 
+            hypertech_data.append({"rid": rid_i, "value": value_i, "dt": dt_start_i})
+
             phisical_device, pdn, groupID, spaces, load, ln, metric = parse_rid(rid_i)
             if metric not in status_mapping.keys():
                 continue
-            TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
-            mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): get_id_from_rid(rid_i)})
-            hypertech_data.append({"rid": rid_i, "value": value_i, "dt": dt_start_i})
-            if mapping:
-                device = Device.find_one({Device.device_id(): mapping.device_id})
-                if device:
-                    device.status[status_mapping[metric]].update({"value": value_i})
-                    device.save()
-                    data = TMP(mapping.device_id, report_id, dt_start_i, duration_i, uid_i, confidence_i, accuracy_i,
-                               dataQuality_i, value_i)
-                    data.save()
-                else:
-                    exception = InvalidReportException("The device {} does not exist".format(rid_i))
 
-            else:
-                exception = InvalidReportException("The device {} does not exist".format(rid_i))
+            json = {
+                "report_id": report_id,#
+                "dtstart": dt_start_i,#
+                "duration": duration_i,#
+                "uid": uid_i,#
+                "confidence": confidence_i,#
+                "accuracy": accuracy_i,#
+                "data_quality": dataQuality_i,#
+                "value": value_i,#
+                "device_id": get_id_from_rid(rid_i),#
+                "account_id": account_id,#
+                "aggregator_id": aggregator_id,#
+                "_updated_at": datetime.utcnow(),#
+                "_created_at": datetime.utcnow()#
+            }
+
+            try:
+                mongo_data[convert_snake_case("{}_{}".format("status", status_mapping[metric]))].append(json)
+            except:
+                mongo_data[convert_snake_case("{}_{}".format("status", status_mapping[metric]))] = [json]
 
         send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data,))
         send_thread.start()
 
-        if exception:
-            raise exception
+        for metric, data in mongo_data.items():
+            df = pd.DataFrame.from_records(data)
+            id_mappings = {}
+            device_mappings = {}
+            rids = df.device_id.unique()
+            for rid in rids:
+                mapping = map_rid_device_id.find_one({map_rid_device_id.rid(): rid})
+                if mapping:
+                    id_mappings[rid] = mapping.device_id
+                    device_mappings[mapping.device_id] = Device.find_one({Device.device_id(): mapping.device_id})
+                else:
+                    errors.append(rid)
+                    id_mappings[rid] = None
+                    device_mappings[rid] = None
+
+            def get_anonimized_id(rid):
+                try:
+                    return id_mappings[rid]
+                except:
+                    return None
+
+            df.device_id = df.device_id.apply(get_anonimized_id)
+
+            # calculate if some recent changes for the device
+            now = datetime.utcnow() - timedelta(minutes=1)
+            df2 = df[pd.to_datetime(df.dtstart) > now]
+            if not df2.empty:
+                grouped = df2.groupby("device_id")
+                for device_id, g in grouped:
+                    max_value = g.loc[g.dtstart == g.dtstart.max()]
+                    device = device_mappings[device_id]
+                    if device:
+                        cvalue = max_value.value.values[0]
+                        device.status[status_mapping[metric]].update({"value": cvalue})
+                        device.save()
+            # save all historics
+            TMP = get_data_model(metric)
+            upload_data = df.to_dict(orient="records")
+            TMP.__mongo__.insert_many(upload_data)
