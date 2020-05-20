@@ -256,9 +256,9 @@ class TelemetryStatusReport(OadrReport):
             }
 
             try:
-                mongo_data[convert_snake_case("{}_{}".format("status", status_mapping[metric]))].append(json)
+                mongo_data[metric].append(json)
             except:
-                mongo_data[convert_snake_case("{}_{}".format("status", status_mapping[metric]))] = [json]
+                mongo_data[metric] = [json]
 
         send_thread = threading.Thread(target=hypertech_send, args=(hypertech_data,))
         send_thread.start()
@@ -304,6 +304,6 @@ class TelemetryStatusReport(OadrReport):
                         device.status[status_mapping[metric]].update({"value": cvalue})
                         device.save()
             # save all historics
-            TMP = get_data_model(metric)
+            TMP = get_data_model(convert_snake_case("{}_{}".format("status", status_mapping[metric])))
             upload_data = df.to_dict(orient="records")
             TMP.__mongo__.insert_many(upload_data)
