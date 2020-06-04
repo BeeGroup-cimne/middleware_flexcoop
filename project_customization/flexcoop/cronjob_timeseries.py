@@ -29,6 +29,19 @@ def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
     zscore = np.abs( (series - stats['median']) / stats['std'])
     return series[zscore < th]
 
+def znorm_value(series, window, th, lowq=2.5, highq=97.5):
+    current = series.iloc[int(window/2)]
+    stats = no_outliers_stats(series, lowq, highq)
+    if np.isnan(stats['std']):
+        zscore = 0
+    else:
+        zscore = np.abs((current - stats['median']) / stats['std'])
+    return zscore
+
+def clean_znorm_window(series, th, lowq=2.5, highq=97.5):
+    zscore = series.rolling(window=49, center=True, min_periods=1).apply(znorm_value, raw=False, args=(49, th))
+    return series[zscore < th]
+
 def clean_threshold_data(series, min_th=None, max_th=None):
     if min_th is not None and max_th is not None:
         return series[(min_th<=series) & (series<=max_th)]
@@ -38,6 +51,20 @@ def clean_threshold_data(series, min_th=None, max_th=None):
         return series[series <= max_th]
     else:
         return series
+
+
+def cleaning_data(series, period, operations):
+    stats = no_outliers_stats(series)
+    max_th = stats['median'] + (8 * stats['std'])
+    series = clean_threshold_data(series, min_th=None, max_th=max_th)
+    for operation in operations:
+        if operation['type'] == 'threshold':
+            series = clean_threshold_data(series, min_th=operation['params'][0], max_th=operation['params'][1])
+        if operation['type'] == "znorm":
+            series = clean_znorm_data(series, operation['params'])
+            if period == "backups":
+                series = clean_znorm_window(series, operation['params'])
+    return series
 
 def aggregate_device_status(now):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
@@ -106,9 +133,9 @@ def aggregate_timeseries(freq, now, period):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     if period == "backups":
-        last_period = today - timedelta(days=360)
+        last_period = today - timedelta(days=7)
     else:
-        last_period = now - timedelta(hours=6)
+        last_period = now - timedelta(hours=12)
 
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
@@ -169,13 +196,8 @@ def aggregate_timeseries(freq, now, period):
                         continue
                     data_clean = df.resample("1s").mean().interpolate().resample(freq).mean().diff().dropna()
                     if value['cleaning']:
-                        for method, parameters in value['cleaning'].items():
-                            if method == "znorm":
-                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
-                            elif method == "threshold":
-                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
-
-
+                        if value['cleaning']:
+                            data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
                 else:
                     data_clean = pd.DataFrame()
 
@@ -191,11 +213,7 @@ def aggregate_timeseries(freq, now, period):
                         continue
                     data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
                     if value['cleaning']:
-                        for method, parameters in value['cleaning'].items():
-                            if method == "znorm":
-                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
-                            elif method == "threshold":
-                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
+                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
                 elif value['operation'] == "FIRST":
                     # first is applied to all types
@@ -211,11 +229,7 @@ def aggregate_timeseries(freq, now, period):
 
                     data_clean = df.resample("1s").pad().dropna().resample(freq).max()
                     if value['cleaning']:
-                        for method, parameters in value['cleaning'].items():
-                            if method == "znorm":
-                                data_clean.value = clean_znorm_data(data_clean.value, parameters)
-                            elif method == "threshold":
-                                data_clean.value = clean_threshold_data(data_clean.value, min_th=parameters[0], max_th=parameters[1])
+                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
                 else:
                     data_clean = pd.DataFrame()
