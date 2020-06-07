@@ -54,17 +54,21 @@ def clean_threshold_data(series, min_th=None, max_th=None):
 
 
 def cleaning_data(series, period, operations):
-    stats = no_outliers_stats(series)
-    max_th = stats['median'] + (8 * stats['std'])
-    series = clean_threshold_data(series, min_th=None, max_th=max_th)
+    df = pd.DataFrame(series)
+    stats = no_outliers_stats(df.value)
+    max_th = abs(stats['median']*2 + (100 * stats['std']))
+    df.value = clean_threshold_data(df.value, min_th=None, max_th=max_th)
     for operation in operations:
         if operation['type'] == 'threshold':
-            series = clean_threshold_data(series, min_th=operation['params'][0], max_th=operation['params'][1])
+            df.value = clean_threshold_data(df.value, min_th=operation['params'][0], max_th=operation['params'][1])
         if operation['type'] == "znorm":
-            series = clean_znorm_data(series, operation['params'])
+            series_1 = df.value[df.value > np.percentile(df.value, 10)]
+            series_1 = clean_znorm_data(series_1, operation['params'])
             if period == "backups":
-                series = clean_znorm_window(series, operation['params'])
-    return series
+                #print(len(series))
+                series_1 = clean_znorm_window(series_1, operation['params'])
+            df.value.update(series_1)
+    return df.value
 
 def aggregate_device_status(now):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
@@ -74,6 +78,7 @@ def aggregate_device_status(now):
         devices.update(raw_model.__mongo__.distinct("device_id"))
     # iterate for each device to obtain the clean data of each type.
     for device in devices:
+        print("starting ", device)
         point = Device.find_one({"device_id": device})
         if not point:
             continue
@@ -96,7 +101,7 @@ def aggregate_device_status(now):
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
-            print("readed data")
+            print("readed data ", key)
             # instant values, expand the value tu the current time
             df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
             data_clean = df.fillna(method="pad")
@@ -142,6 +147,7 @@ def aggregate_timeseries(freq, now, period):
         devices.update(raw_model.__mongo__.distinct("device_id"))
     #iterate for each device to obtain the clean data of each type.
     for device in devices:
+        print("starting ", device)
         point = DataPoint.find_one({"device_id": device})
         if not point:
             continue
@@ -185,7 +191,7 @@ def aggregate_timeseries(freq, now, period):
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
             df = df.loc[~df.index.duplicated(keep='last')]
-            print("readed data")
+            print("readed data ", key)
 
             if reading_type == "Direct Read":
                 if value['operation'] == "SUM":
@@ -382,6 +388,9 @@ def delete_raw_data():
                 raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
 
 # Call this function every 15 min
+    """
+    aggregate_timeseries("15Min", datetime.utcnow(), "backups")
+    """
 def clean_data(period):
     aggregate_timeseries("15Min", datetime.utcnow(), period)
     aggregate_device_status(datetime.utcnow())

@@ -85,7 +85,7 @@ class device_status(timeseries):
 
 timeseries_mapping = {
     "ambient_temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": [{"type": "threshold", "params": [-20, 50]}, {"type":"znorm", "params": 4}]},
-    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning": [{"type": "threshold", "params": [-20, 50]}, {"type":"znorm", "params": 4}]},
+    "sensor_temperature": {"class": indoor_sensing, "field": "temperature" ,"operation": "AVG", "cleaning":  [{"type": "threshold", "params": [-20, 50]}, {"type":"znorm", "params": 4}]},
     "temperature": {"class": indoor_sensing, "field": "temperature", "operation": "AVG", "cleaning": [{"type": "threshold", "params": [-20, 50]}, {"type":"znorm", "params": 4}]},
     "lux": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": [{"type": "threshold", "params": [0, None]}, {"type":"znorm", "params": 4}]},
     "sensor_luminance": {"class": indoor_sensing, "field": "lux", "operation": "AVG", "cleaning": [{"type": "threshold", "params": [0, None]}, {"type":"znorm", "params": 4}]},
@@ -104,7 +104,7 @@ timeseries_mapping = {
     "meter_voltage": {"class": meter, "field": "voltage", "operation": "AVG",
                       "cleaning": [{"type": "threshold", "params": [0, None]}, {"type":"znorm", "params": 4}]},
     "meter_watts": {"class": meter, "field": "watts", "operation": "AVG",
-                    "cleaning": [{"type": "threshold", "params": [0, None]}, {"type":"znorm", "params": 4}]},
+                    "cleaning": [{"type": "threshold", "params": [0, None]}]},
 }
 
 status_devices = {
