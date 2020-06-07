@@ -30,7 +30,10 @@ def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
     return series[zscore < th]
 
 def znorm_value(series, window, th, lowq=2.5, highq=97.5):
-    current = series.iloc[int(window/2)]
+    val_index = int(window / 2)
+    if len(series) < val_index:
+        return 0
+    current = series.iloc[val_index]
     stats = no_outliers_stats(series, lowq, highq)
     if np.isnan(stats['std']):
         zscore = 0
@@ -201,9 +204,8 @@ def aggregate_timeseries(freq, now, period):
                         print("AVG is only valid for numeric values")
                         continue
                     data_clean = df.resample("1s").mean().interpolate().resample(freq).mean().diff().dropna()
-                    if value['cleaning']:
-                        if value['cleaning']:
-                            data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
+                    if value['cleaning'] and not data_clean.empty:
+                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
                 else:
                     data_clean = pd.DataFrame()
 
@@ -218,7 +220,7 @@ def aggregate_timeseries(freq, now, period):
                         print("AVG is only valid for numeric values")
                         continue
                     data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
-                    if value['cleaning']:
+                    if value['cleaning'] and not data_clean.empty:
                         data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
                 elif value['operation'] == "FIRST":
@@ -234,7 +236,7 @@ def aggregate_timeseries(freq, now, period):
                         continue
 
                     data_clean = df.resample("1s").pad().dropna().resample(freq).max()
-                    if value['cleaning']:
+                    if value['cleaning'] and not data_clean.empty:
                         data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
                 else:
@@ -390,6 +392,7 @@ def delete_raw_data():
 # Call this function every 15 min
     """
     aggregate_timeseries("15Min", datetime.utcnow(), "backups")
+    aggregate_timeseries("15Min", datetime.utcnow(), "hourly")
     """
 def clean_data(period):
     aggregate_timeseries("15Min", datetime.utcnow(), period)
