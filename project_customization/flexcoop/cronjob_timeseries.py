@@ -4,7 +4,7 @@ import sys
 from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
 
-#sys.path.extend([sys.argv[1]])
+sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint, Device
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
