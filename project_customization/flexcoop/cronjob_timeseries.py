@@ -4,7 +4,7 @@ import sys
 from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
 
-sys.path.extend([sys.argv[1]])
+#sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint, Device
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
@@ -74,6 +74,7 @@ def cleaning_data(series, period, operations):
     return df.value
 
 def aggregate_device_status(now):
+    print("********* START STATUS CLEAN {} *************", datetime.now())
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     for key, value in status_devices.items():
@@ -96,15 +97,17 @@ def aggregate_device_status(now):
 
             raw_model = get_data_model(database)
             data = MongoDB.to_dict(raw_model.find({"device_id": device}))
+            print("readed data ", key)
             if not data:
                 continue
             df = pd.DataFrame.from_records(data)
-            df.index = pd.to_datetime(df.dtstart)
+            df.index = pd.to_datetime(df.dtstart, errors='coerce')
+            df = df[~df.index.isna()]
             df = df.sort_index()
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
             device_class = point.rid
-            print("readed data ", key)
+
             # instant values, expand the value tu the current time
             df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
             data_clean = df.fillna(method="pad")
@@ -131,9 +134,10 @@ def aggregate_device_status(now):
             df_ini = min(device_df_final.index)
             df_max = max(device_df_final.index)
             documents = device_df_final.to_dict('records')
-            print("writting_sensing_data {}".format(len(documents)))
+            print("writting_status_data {}".format(len(documents)))
             device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
             device_status.__mongo__.insert_many(documents)
+    print("********* END STATUS CLEAN {} *************", datetime.now())
 
 
 def aggregate_timeseries(freq, now, period):
