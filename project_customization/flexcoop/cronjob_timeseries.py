@@ -208,7 +208,11 @@ def aggregate_timeseries(freq, now, period):
                     except:
                         print("AVG is only valid for numeric values")
                         continue
-                    data_clean = df.resample("1s").mean().interpolate().resample(freq).mean().diff().dropna()
+                    data_clean = df.resample("1s").mean().interpolate().diff()
+                    data_clean = clean_threshold_data(data_clean, 0 , None)
+                    data_clean = clean_znorm_data(data_clean, 3)
+                    data_clean = data_clean.fillna(0)
+                    data_clean = data_clean.resample(freq).sum()
                     if value['cleaning'] and not data_clean.empty:
                         data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
                 else:
