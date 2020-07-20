@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timedelta
 import sys
 
@@ -421,6 +422,7 @@ if __name__ == "__main__":
                     last_pid = int(pid.read())
                     try:
                         os.kill(last_pid, 9)
+                        time.sleep(3)
                     except OSError:
                         pass
 
