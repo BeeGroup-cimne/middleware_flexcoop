@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 import sys
 
@@ -411,6 +412,19 @@ def clean_data(period):
 
 if __name__ == "__main__":
     if sys.argv[2] == "clean":
+        # pidfile checking
+        pidfile = "flexcoop_clean_{}.PID".format(sys.argv[3])
+        working_directory = os.path.dirname(os.path.abspath(__file__))
+        if os.path.isfile('{}/{}'.format(working_directory, pidfile)):
+            with open('{}/{}'.format(working_directory, pidfile), "r") as pid:
+                last_pid = int(pid.read())
+                try:
+                    os.kill(last_pid, 0)
+                    exit(0)
+                except OSError:
+                    pass
+        with open('{}/{}'.format(working_directory, pidfile), "w") as pid:
+            pid.write(str(os.getpid()))
         clean_data(sys.argv[3])
     elif sys.argv[2] == "delete":
         delete_raw_data()
