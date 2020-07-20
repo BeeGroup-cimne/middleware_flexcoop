@@ -413,8 +413,17 @@ def clean_data(period):
 if __name__ == "__main__":
     if sys.argv[2] == "clean":
         # pidfile checking
-        pidfile = "flexcoop_clean_{}.PID".format(sys.argv[3])
+        pidfile = "flexcoop_clean.PID"
         working_directory = os.path.dirname(os.path.abspath(__file__))
+        if sys.argv[3] == "backups":
+            if os.path.isfile('{}/{}'.format(working_directory, pidfile)):
+                with open('{}/{}'.format(working_directory, pidfile), "r") as pid:
+                    last_pid = int(pid.read())
+                    try:
+                        os.kill(last_pid, 9)
+                    except OSError:
+                        pass
+
         if os.path.isfile('{}/{}'.format(working_directory, pidfile)):
             with open('{}/{}'.format(working_directory, pidfile), "r") as pid:
                 last_pid = int(pid.read())
