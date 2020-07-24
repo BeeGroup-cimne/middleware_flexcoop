@@ -83,6 +83,7 @@ def aggregate_device_status(now):
     for key, value in status_devices.items():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
+    devices = list(devices)
     def clean_device_data(devices):
         for device in devices:
             print("starting ", device)
@@ -161,7 +162,7 @@ def aggregate_timeseries(freq, now, period):
     for key, value in timeseries_mapping.items():
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
-
+    devices = list(devices)
     def clean_device_data(devices):
         for device in devices:
             print("starting ", device)
