@@ -3,6 +3,7 @@ import os
 import time
 from datetime import datetime, timedelta
 import sys
+from functools import partial
 
 from pymongo import UpdateOne, ReplaceOne, DeleteMany
 
@@ -77,7 +78,7 @@ def cleaning_data(series, period, operations):
     return df.value
 
 
-def clean_device_data_status(devices):
+def clean_device_data_status(today, now, devices):
     for device in devices:
         print("starting ", device)
         point = Device.find_one({"device_id": device})
@@ -147,10 +148,10 @@ def aggregate_device_status(now):
     # iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool()
     devices_per_thread = 10;
-    a_pool.map(clean_device_data_status, [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
+    a_pool.map(partial(clean_device_data_status(today, now)), [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
-def clean_device_data_timeseries(devices):
+def clean_device_data_timeseries(today, now, devices):
     for device in devices:
         print("starting ", device)
         point = DataPoint.find_one({"device_id": device})
@@ -345,7 +346,7 @@ def aggregate_timeseries(freq, now, period):
     #iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool()
     devices_per_thread = 10;
-    a_pool.map(clean_device_data_timeseries,
+    a_pool.map(partial(clean_device_data_timeseries(today, now)),
                [devices[x:x + devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
 
     print("********* FINISH CLEAN {} *************", datetime.now())
