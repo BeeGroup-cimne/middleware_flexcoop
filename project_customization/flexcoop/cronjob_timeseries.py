@@ -76,6 +76,66 @@ def cleaning_data(series, period, operations):
             df.value.update(series_1)
     return df.value
 
+
+def clean_device_data_status(devices):
+    for device in devices:
+        print("starting ", device)
+        point = Device.find_one({"device_id": device})
+        if not point:
+            continue
+        device_df = []
+        #fdsfa
+        for key in point.status.keys():
+            try:
+                database = "{}_{}".format("status",convert_snake_case(key))
+                value = status_devices[database]
+            except:
+                continue
+
+            raw_model = get_data_model(database)
+            data = MongoDB.to_dict(raw_model.find({"device_id": device}))
+            print("readed data ", key)
+            if not data:
+                continue
+            df = pd.DataFrame.from_records(data)
+            df.index = pd.to_datetime(df.dtstart, errors='coerce')
+            df = df[~df.index.isna()]
+            df = df.sort_index()
+            account_id = df.account_id.unique()[0]
+            aggregator_id = df.aggregator_id.unique()[0]
+            device_class = point.rid
+
+            # instant values, expand the value tu the current time
+            df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
+            data_clean = df.fillna(method="pad")
+            if data_clean.empty:
+                continue
+            df = pd.DataFrame(data_clean)
+            df = df.rename(columns={"value": value['field']})
+            device_df.append(df)
+        print("treated data")
+        #fdsafdf
+        if device_df:
+            device_df_final = device_df.pop(0)
+            device_df_final = device_df_final.join(device_df, how="outer")
+            device_df_final = device_df_final.fillna(method="pad")
+            device_df_final['account_id'] = account_id
+            device_df_final['aggregator_id'] = aggregator_id
+            device_df_final['device_class'] = device_class
+            device_df_final['device_id'] = device
+            device_df_final['timestamp'] = device_df_final.index.to_pydatetime()
+            device_df_final['_created_at'] = datetime.utcnow()
+            device_df_final['_updated_at'] = datetime.utcnow()
+            device_df_final = device_df_final[device_df_final.index >= today.replace(tzinfo=None)]
+
+            df_ini = min(device_df_final.index)
+            df_max = max(device_df_final.index)
+            documents = device_df_final.to_dict('records')
+            print("writting_status_data {}".format(len(documents)))
+            device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            device_status.__mongo__.insert_many(documents)
+
+
 def aggregate_device_status(now):
     print("********* START STATUS CLEAN {} *************", datetime.now())
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
@@ -84,86 +144,13 @@ def aggregate_device_status(now):
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
     devices = list(devices)
-    def clean_device_data(devices):
-        for device in devices:
-            print("starting ", device)
-            point = Device.find_one({"device_id": device})
-            if not point:
-                continue
-            device_df = []
-            #fdsfa
-            for key in point.status.keys():
-                try:
-                    database = "{}_{}".format("status",convert_snake_case(key))
-                    value = status_devices[database]
-                except:
-                    continue
-
-                raw_model = get_data_model(database)
-                data = MongoDB.to_dict(raw_model.find({"device_id": device}))
-                print("readed data ", key)
-                if not data:
-                    continue
-                df = pd.DataFrame.from_records(data)
-                df.index = pd.to_datetime(df.dtstart, errors='coerce')
-                df = df[~df.index.isna()]
-                df = df.sort_index()
-                account_id = df.account_id.unique()[0]
-                aggregator_id = df.aggregator_id.unique()[0]
-                device_class = point.rid
-
-                # instant values, expand the value tu the current time
-                df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
-                data_clean = df.fillna(method="pad")
-                if data_clean.empty:
-                    continue
-                df = pd.DataFrame(data_clean)
-                df = df.rename(columns={"value": value['field']})
-                device_df.append(df)
-            print("treated data")
-            #fdsafdf
-            if device_df:
-                device_df_final = device_df.pop(0)
-                device_df_final = device_df_final.join(device_df, how="outer")
-                device_df_final = device_df_final.fillna(method="pad")
-                device_df_final['account_id'] = account_id
-                device_df_final['aggregator_id'] = aggregator_id
-                device_df_final['device_class'] = device_class
-                device_df_final['device_id'] = device
-                device_df_final['timestamp'] = device_df_final.index.to_pydatetime()
-                device_df_final['_created_at'] = datetime.utcnow()
-                device_df_final['_updated_at'] = datetime.utcnow()
-                device_df_final = device_df_final[device_df_final.index >= today.replace(tzinfo=None)]
-
-                df_ini = min(device_df_final.index)
-                df_max = max(device_df_final.index)
-                documents = device_df_final.to_dict('records')
-                print("writting_status_data {}".format(len(documents)))
-                device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                device_status.__mongo__.insert_many(documents)
-
     # iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool()
     devices_per_thread = 10;
-    a_pool.map(clean_device_data, [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
+    a_pool.map(clean_device_data_status, [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
-
-def aggregate_timeseries(freq, now, period):
-    #search for all reporting devices
-    print("********* START CLEAN {} *************", datetime.now())
-    today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
-    devices = set()
-    if period == "backups":
-        last_period = today - timedelta(days=7)
-    else:
-        last_period = now - timedelta(hours=12)
-
-    for key, value in timeseries_mapping.items():
-        raw_model = get_data_model(key)
-        devices.update(raw_model.__mongo__.distinct("device_id"))
-    devices = list(devices)
-    def clean_device_data(devices):
+    def clean_device_data_timeseries(devices):
         for device in devices:
             print("starting ", device)
             point = DataPoint.find_one({"device_id": device})
@@ -340,10 +327,25 @@ def aggregate_timeseries(freq, now, period):
                     meter.__mongo__.delete_many(
                         {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
                     meter.__mongo__.insert_many(documents)
+
+def aggregate_timeseries(freq, now, period):
+    #search for all reporting devices
+    print("********* START CLEAN {} *************", datetime.now())
+    today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
+    devices = set()
+    if period == "backups":
+        last_period = today - timedelta(days=7)
+    else:
+        last_period = now - timedelta(hours=12)
+
+    for key, value in timeseries_mapping.items():
+        raw_model = get_data_model(key)
+        devices.update(raw_model.__mongo__.distinct("device_id"))
+    devices = list(devices)
     #iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool()
     devices_per_thread = 10;
-    a_pool.map(clean_device_data,
+    a_pool.map(clean_device_data_timeseries,
                [devices[x:x + devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
 
     print("********* FINISH CLEAN {} *************", datetime.now())
