@@ -5,9 +5,8 @@ from datetime import datetime, timedelta
 import sys
 from functools import partial
 
-from pymongo import UpdateOne, ReplaceOne, DeleteMany
-
-
+from pymongo import UpdateOne, ReplaceOne, DeleteMany, MongoClient
+import settings
 sys.path.extend([sys.argv[1]])
 from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint, Device
@@ -79,22 +78,25 @@ def cleaning_data(series, period, operations):
 
 
 def clean_device_data_status(today, now, devices):
+    conn = MongoClient(settings.MONGO_URI)
+    databasem = conn.get_database("flexcoop")
+    devicep = databasem['devices']
     for device in devices:
         print("starting ", device)
-        point = Device.find_one({"device_id": device})
+        point = devicep.find_one({"device_id": device})
         if not point:
             continue
         device_df = []
         #fdsfa
-        for key in point.status.keys():
+        for key in point['status'].keys():
             try:
                 database = "{}_{}".format("status",convert_snake_case(key))
                 value = status_devices[database]
             except:
                 continue
 
-            raw_model = get_data_model(database)
-            data = MongoDB.to_dict(raw_model.find({"device_id": device}))
+            raw_model = databasem[database]
+            data = list(raw_model.find({"device_id": device}))
             print("readed data ", key)
             if not data:
                 continue
@@ -104,7 +106,7 @@ def clean_device_data_status(today, now, devices):
             df = df.sort_index()
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
-            device_class = point.rid
+            device_class = point['rid']
 
             # instant values, expand the value tu the current time
             df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
@@ -133,8 +135,8 @@ def clean_device_data_status(today, now, devices):
             df_max = max(device_df_final.index)
             documents = device_df_final.to_dict('records')
             print("writting_status_data {}".format(len(documents)))
-            device_status.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-            device_status.__mongo__.insert_many(documents)
+            databasem['device_status'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            databasem['device_status'].insert_many(documents)
 
 
 def aggregate_device_status(now):
@@ -152,30 +154,34 @@ def aggregate_device_status(now):
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
 def clean_device_data_timeseries(today, now, last_period, freq, period, devices):
+    conn = MongoClient(settings.MONGO_URI)
+    database = conn.get_database("flexcoop")
+    datap = database['data_points']
     for device in devices:
         print("starting ", device)
-        point = DataPoint.find_one({"device_id": device})
+        point = datap.find_one({"device_id": device})
         if not point:
             continue
-
         indoor_sensing_df = []
         occupancy_df = []
         meter_df = []
-
-        for key in point.reporting_items.keys():
+        for key in point['reporting_items'].keys():
             try:
                 value = timeseries_mapping[key]
             except:
                 continue
-            raw_model = get_data_model(key)
-            data = MongoDB.to_dict(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+
+            raw_model = database[key]
+            data = list(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
                 #no data in the last period, get the last value ever.
-                data = MongoDB.to_dict(raw_model.find({"device_id": device,
-                                                       "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+                print("nodata")
+                data =list(raw_model.find({"device_id": device, "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
                 if not data:
+                    print("nodata2")
                     continue
                 else:
+                    print("data2")
                     #get the last value of the request
                     df = pd.DataFrame.from_records(data)
                     df.index = pd.to_datetime(df.dtstart, errors='coerce')
@@ -190,12 +196,12 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 df = df.sort_index()
 
             # get the data_point information
-            point_info = point.reporting_items[key]
+            point_info = point['reporting_items'][key]
             reading_type = point_info['reading_type']
 
             account_id = df.account_id.unique()[0]
             aggregator_id = df.aggregator_id.unique()[0]
-            device_class = point.rid
+            device_class = point['rid']
             df = df.loc[~df.index.duplicated(keep='last')]
             print("readed data ", key)
 
@@ -286,8 +292,8 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 df_max = max(indoor_sensing_final.index)
                 documents = indoor_sensing_final.to_dict('records')
                 print("writting_sensing_data {}".format(len(documents)))
-                indoor_sensing.__mongo__.delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                indoor_sensing.__mongo__.insert_many(documents)
+                database['indoor_sensing'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+                database['indoor_sensing'].insert_many(documents)
 
         if occupancy_df:
             occupancy_final = occupancy_df.pop(0)
@@ -305,9 +311,9 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 df_max = max(occupancy_final.index)
                 documents = occupancy_final.to_dict('records')
                 print("writting_occupancy_data {}".format(len(documents)))
-                occupancy.__mongo__.delete_many(
+                database['occupancy'].delete_many(
                     {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                occupancy.__mongo__.insert_many(documents)
+                database['occupancy'].__mongo__.insert_many(documents)
 
         if meter_df:
             meter_final = meter_df.pop(0)
@@ -325,9 +331,9 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 df_max = max(meter_final.index)
                 documents = meter_final.to_dict('records')
                 print("writting_meter_data {}".format(len(documents)))
-                meter.__mongo__.delete_many(
+                database['meter'].__mongo__.delete_many(
                     {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                meter.__mongo__.insert_many(documents)
+                database['meter'].__mongo__.insert_many(documents)
 
 def aggregate_timeseries(freq, now, period):
     #search for all reporting devices
@@ -352,71 +358,71 @@ def aggregate_timeseries(freq, now, period):
     print("********* FINISH CLEAN {} *************", datetime.now())
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
-def delete_raw_data():
-    now = datetime.now()
-    now = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
-    # search for all reporting devices
-    devices = set()
-    for key, value in timeseries_mapping.items():
-        raw_model = get_data_model(key)
-        devices.update(raw_model.__mongo__.distinct("device_id"))
-    # shall to delete all raw data, but leave the last 2 timesteps.
-    for device in devices:
-        print(device)
-        point = DataPoint.find_one({"device_id": device})
-        if not point:
-            continue
-        for key in point.reporting_items.keys():
-            try:
-                value = timeseries_mapping[key]
-            except:
-                continue
-            raw_model = get_data_model(key)
-            data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
-            delete_date = None
-            try:
-                if data1[0]:
-                    try:
-                        delete_date = data1[1]['dtstart']
-                    except:
-                        delete_date = data1[0]['dtstart']
-            except:
-                continue
-
-            if delete_date:
-                raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt":delete_date}})
-
-    devices = set()
-    for key, value in status_devices.items():
-        raw_model = get_data_model(key)
-        devices.update(raw_model.__mongo__.distinct("device_id"))
-
-    # shall to delete all raw data, but leave the last 2 timestep.
-    for device in devices:
-        print(device)
-        point = Device.find_one({"device_id": device})
-        if not point:
-            continue
-        for key in point.status.keys():
-            try:
-                database = "{}_{}".format("status",convert_snake_case(key))
-                value = status_devices[database]
-            except:
-                continue
-            raw_model = get_data_model(database)
-            data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
-            delete_date = None
-            try:
-                if data1[0]:
-                    try:
-                        delete_date = data1[1]['dtstart']
-                    except:
-                        delete_date = data1[0]['dtstart']
-            except:
-                continue
-
-            if delete_date:
-                raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
+# def delete_raw_data():
+#     now = datetime.now()
+#     now = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
+#     # search for all reporting devices
+#     devices = set()
+#     for key, value in timeseries_mapping.items():
+#         raw_model = get_data_model(key)
+#         devices.update(raw_model.__mongo__.distinct("device_id"))
+#     # shall to delete all raw data, but leave the last 2 timesteps.
+#     for device in devices:
+#         print(device)
+#         point = DataPoint.find_one({"device_id": device})
+#         if not point:
+#             continue
+#         for key in point.reporting_items.keys():
+#             try:
+#                 value = timeseries_mapping[key]
+#             except:
+#                 continue
+#             raw_model = get_data_model(key)
+#             data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
+#             delete_date = None
+#             try:
+#                 if data1[0]:
+#                     try:
+#                         delete_date = data1[1]['dtstart']
+#                     except:
+#                         delete_date = data1[0]['dtstart']
+#             except:
+#                 continue
+#
+#             if delete_date:
+#                 raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt":delete_date}})
+#
+#     devices = set()
+#     for key, value in status_devices.items():
+#         raw_model = get_data_model(key)
+#         devices.update(raw_model.__mongo__.distinct("device_id"))
+#
+#     # shall to delete all raw data, but leave the last 2 timestep.
+#     for device in devices:
+#         print(device)
+#         point = Device.find_one({"device_id": device})
+#         if not point:
+#             continue
+#         for key in point.status.keys():
+#             try:
+#                 database = "{}_{}".format("status",convert_snake_case(key))
+#                 value = status_devices[database]
+#             except:
+#                 continue
+#             raw_model = get_data_model(database)
+#             data1 = raw_model.__mongo__.find({"device_id": device, "dtstart": {"$lt": now.strftime("%Y-%m-%dT%H:%M:%s.fZ")}}, sort=[("dtstart", -1)])
+#             delete_date = None
+#             try:
+#                 if data1[0]:
+#                     try:
+#                         delete_date = data1[1]['dtstart']
+#                     except:
+#                         delete_date = data1[0]['dtstart']
+#             except:
+#                 continue
+#
+#             if delete_date:
+#                 raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
 
 # Call this function every 15 min
     """
