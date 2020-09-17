@@ -315,7 +315,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 print("writting_occupancy_data {}".format(len(documents)))
                 database['occupancy'].delete_many(
                     {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['occupancy'].__mongo__.insert_many(documents)
+                database['occupancy'].insert_many(documents)
 
         if meter_df:
             meter_final = meter_df.pop(0)
@@ -333,9 +333,9 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 df_max = max(meter_final.index)
                 documents = meter_final.to_dict('records')
                 print("writting_meter_data {}".format(len(documents)))
-                database['meter'].__mongo__.delete_many(
+                database['meter'].delete_many(
                     {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['meter'].__mongo__.insert_many(documents)
+                database['meter'].insert_many(documents)
 
 def aggregate_timeseries(freq, now, period):
     #search for all reporting devices
