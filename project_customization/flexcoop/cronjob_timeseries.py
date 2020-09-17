@@ -6,7 +6,6 @@ import sys
 from functools import partial
 
 from pymongo import UpdateOne, ReplaceOne, DeleteMany, MongoClient
-import settings
 sys.path.extend([sys.argv[1]])
 import settings
 
