@@ -463,6 +463,7 @@ if __name__ == "__main__":
             pid.write(str(os.getpid()))
         clean_data(sys.argv[3])
     elif sys.argv[2] == "delete":
+        pass
         #delete_raw_data()
     else:
         print("error")
