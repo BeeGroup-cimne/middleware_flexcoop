@@ -303,7 +303,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
 
         if atw_heatpumps_df:
             atw_heatpumps_final = atw_heatpumps_df.pop(0)
-            atw_heatpumps_final = indoor_sensing_final.join(atw_heatpumps_df)
+            atw_heatpumps_final = atw_heatpumps_final.join(atw_heatpumps_df)
             atw_heatpumps_final['account_id'] = account_id
             atw_heatpumps_final['aggregator_id'] = aggregator_id
             atw_heatpumps_final['device_class'] = device_class
@@ -313,7 +313,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
             atw_heatpumps_final['_updated_at'] = datetime.utcnow()
             atw_heatpumps_final = atw_heatpumps_final[atw_heatpumps_final.index >= last_period.replace(tzinfo=None)]
             if not atw_heatpumps_final.empty:
-                df_ini = min(atw_heatpumps.index)
+                df_ini = min(atw_heatpumps_final.index)
                 df_max = max(atw_heatpumps_final.index)
                 documents = atw_heatpumps_final.to_dict('records')
                 print("writting_sensing_data {}".format(len(documents)))
