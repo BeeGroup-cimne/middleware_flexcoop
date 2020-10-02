@@ -70,9 +70,22 @@ class meter(timeseries):
 
 class atw_heatpumps(timeseries):
     __collectionname__ = "airtowater"
+    account_id = AnyField()
+    aggregator_id = AnyField()
+    device_id = AnyField()
+    timestamp = AnyField()
+    device_class = AnyField()
+    calculatedflowtempC = AnyField()
+    heatmediumflowC = AnyField()
+    roomtemperatureC = AnyField()
+    returntempC = AnyField()
+    hotwatertopC = AnyField()
+    hotwaterchargingC = AnyField()
+    outdoortempC = AnyField()
+    externalflowtempC = AnyField()
 
-    def __init__(self):
-        super(atw_heatpumps, self).__init__()
+    def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
+        super(atw_heatpumps, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
 class device_status(timeseries):
     __collectionname__ = "device_status"
