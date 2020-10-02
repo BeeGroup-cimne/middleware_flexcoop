@@ -13,7 +13,7 @@ from mongo_orm import MongoDB, AnyField
 from project_customization.flexcoop.models import DataPoint, Device
 from project_customization.flexcoop.reports.telemetry_usage import get_data_model
 from project_customization.flexcoop.timeseries_utils import timeseries_mapping, indoor_sensing, occupancy, meter, \
-    status_devices, device_status
+    status_devices, device_status, atw_heatpumps
 from project_customization.flexcoop.utils import convert_snake_case
 
 import pandas as pd
@@ -165,6 +165,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
         point = datap.find_one({"device_id": device})
         if not point:
             continue
+        atw_heatpumps_df = []
         indoor_sensing_df = []
         occupancy_df = []
         meter_df = []
@@ -274,6 +275,8 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 occupancy_df.append(df)
             elif value['class'] == meter:
                 meter_df.append(df)
+            elif value['class'] == atw_heatpumps:
+                atw_heatpumps_df.append(df)
             else:
                 continue
         print("treated data")
@@ -297,6 +300,25 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 print("writting_sensing_data {}".format(len(documents)))
                 database['indoor_sensing'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
                 database['indoor_sensing'].insert_many(documents)
+
+        if atw_heatpumps_df:
+            atw_heatpumps_final = atw_heatpumps_df.pop(0)
+            atw_heatpumps_final = indoor_sensing_final.join(atw_heatpumps_df)
+            atw_heatpumps_final['account_id'] = account_id
+            atw_heatpumps_final['aggregator_id'] = aggregator_id
+            atw_heatpumps_final['device_class'] = device_class
+            atw_heatpumps_final['device_id'] = device
+            atw_heatpumps_final['timestamp'] = atw_heatpumps_final.index.to_pydatetime()
+            atw_heatpumps_final['_created_at'] = datetime.utcnow()
+            atw_heatpumps_final['_updated_at'] = datetime.utcnow()
+            atw_heatpumps_final = atw_heatpumps_final[atw_heatpumps_final.index >= last_period.replace(tzinfo=None)]
+            if not atw_heatpumps_final.empty:
+                df_ini = min(atw_heatpumps.index)
+                df_max = max(atw_heatpumps_final.index)
+                documents = atw_heatpumps_final.to_dict('records')
+                print("writting_sensing_data {}".format(len(documents)))
+                database['atw_heatpumps'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+                database['atw_heatpumps'].insert_many(documents)
 
         if occupancy_df:
             occupancy_final = occupancy_df.pop(0)
