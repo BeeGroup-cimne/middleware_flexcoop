@@ -149,7 +149,7 @@ def aggregate_device_status(now):
         devices.update(raw_model.__mongo__.distinct("device_id"))
     devices = list(devices)
     # iterate for each device to obtain the clean data of each type.
-    a_pool = multiprocessing.Pool()
+    a_pool = multiprocessing.Pool(10)
     devices_per_thread = 10;
     a_pool.map(partial(clean_device_data_status, today, now), [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
     print("********* END STATUS CLEAN {} *************", datetime.now())
@@ -351,7 +351,7 @@ def aggregate_timeseries(freq, now, period):
         devices.update(raw_model.__mongo__.distinct("device_id"))
     devices = list(devices)
     #iterate for each device to obtain the clean data of each type.
-    a_pool = multiprocessing.Pool()
+    a_pool = multiprocessing.Pool(10)
     devices_per_thread = 10;
     a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),
                [devices[x:x + devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
