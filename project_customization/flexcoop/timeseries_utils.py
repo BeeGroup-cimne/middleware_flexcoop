@@ -68,6 +68,12 @@ class meter(timeseries):
     def __init__(self, account_id, aggregator_id, device_id, device_class, timestamp, **kwargs):
         super(meter, self).__init__(account_id, aggregator_id, device_id, device_class, timestamp, **kwargs)
 
+class atw_heatpumps(timeseries):
+    __collectionname__ = "airtowater"
+
+    def __init__(self):
+        super(atw_heatpumps, self).__init__()
+
 class device_status(timeseries):
     __collectionname__ = "device_status"
     account_id = AnyField()
@@ -105,6 +111,23 @@ timeseries_mapping = {
                       "cleaning": [{"type": "threshold", "params": [0, None]}, {"type":"znorm", "params": 4}]},
     "meter_watts": {"class": meter, "field": "watts", "operation": "AVG",
                     "cleaning": [{"type": "threshold", "params": [0, None]}]},
+
+    "calculatedflowtemp": {"class": atw_heatpumps, "field": "calculatedflowtempC", "operation": "AVG",
+                      "cleaning": False},
+    "heatmediumflow": {"class": atw_heatpumps, "field": "heatmediumflowC", "operation": "AVG",
+                      "cleaning": False},
+    "roomtemperature": {"class": atw_heatpumps, "field": "roomtemperatureC", "operation": "AVG",
+                      "cleaning": False},
+    "returntemp": {"class": atw_heatpumps, "field": "returntempC", "operation": "AVG",
+                      "cleaning": False},
+    "hotwatertop": {"class": atw_heatpumps, "field": "hotwatertopC", "operation": "AVG",
+                      "cleaning": False},
+    "hotwatercharging": {"class": atw_heatpumps, "field": "hotwaterchargingC", "operation": "AVG",
+                      "cleaning": False},
+    "outdoortemp": {"class": atw_heatpumps, "field": "outdoortempC", "operation": "AVG",
+                      "cleaning": False},
+    "externalflowtemp": {"class": atw_heatpumps, "field": "externalflowtempC", "operation": "AVG",
+                      "cleaning": False},
 }
 
 status_devices = {
