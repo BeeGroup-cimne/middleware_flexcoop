@@ -24,7 +24,7 @@ import pytz
 #define the final timeseries models:
 timezone = pytz.timezone("Europe/Madrid")
 NUM_PROCESSES = 10
-DEVICES_BY_PROC = 20
+DEVICES_BY_PROC = 10
 
 def no_outliers_stats(series, lowq=2.5, highq=97.5):
   hh = series[(series <= np.nanquantile(series, highq/100))& (series >= np.nanquantile(series, lowq/100))]
@@ -216,16 +216,16 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                     except:
                         print("AVG is only valid for numeric values")
                         continue
-                    df = df[df.value <= df.value.shift(-1).fillna(method='pad')]
+                    df.value = clean_threshold_data(df.value, 0, None)
+                    df = df[df.value >= df.value.shift(1).fillna(method='bfill')]
                     if df.empty:
                         continue
-                    data_clean = df.resample("1s").mean().interpolate().diff()
+                    data_clean = df.value.resample("1s").mean().interpolate().diff()
                     data_clean = clean_threshold_data(data_clean, 0 , None)
-                    data_clean = clean_znorm_data(data_clean, 3)
                     data_clean = data_clean.fillna(0)
                     data_clean = data_clean.resample(freq).sum()
                     if value['cleaning'] and not data_clean.empty:
-                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
+                        data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
                 else:
                     data_clean = pd.DataFrame()
 
