@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 import sys
 from functools import partial
-
+import mongo_proxy
 from pymongo import UpdateOne, ReplaceOne, DeleteMany, MongoClient
 sys.path.extend([sys.argv[1]])
 import settings
@@ -81,7 +81,7 @@ def cleaning_data(series, period, operations):
 
 
 def clean_device_data_status(today, now, devices):
-    conn = MongoClient(settings.MONGO_URI)
+    conn = mongo_proxy.MongoProxy(MongoClient(settings.MONGO_URI))
     databasem = conn.get_database("flexcoop")
     devicep = databasem['devices']
     for device in devices:
@@ -157,7 +157,7 @@ def aggregate_device_status(now):
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
 def clean_device_data_timeseries(today, now, last_period, freq, period, devices):
-    conn = MongoClient(settings.MONGO_URI)
+    conn = mongo_proxy.MongoProxy(MongoClient(settings.MONGO_URI))
     database = conn.get_database("flexcoop")
     datap = database['data_points']
     for device in devices:
