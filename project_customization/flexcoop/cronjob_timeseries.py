@@ -216,12 +216,16 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                     except:
                         print("AVG is only valid for numeric values")
                         continue
-                    df.value = clean_threshold_data(df.value, 0, None)
-                    df = df[df.value >= df.value.shift(1).fillna(method='bfill')]
-                    if df.empty:
-                        continue
+                    # data_clean = df.value.diff()
+                    #data_clean = clean_threshold_data(data_clean, 0, None)
+                    #data_clean = clean_znorm_data(data_clean, 3)
+                    #data_clean = data_clean.resample("1s").mean().interpolate()
+                    #df.value = clean_threshold_data(df.value, 0, None)
                     data_clean = df.value.resample("1s").mean().interpolate().diff()
                     data_clean = clean_threshold_data(data_clean, 0 , None)
+                    data_clean = clean_znorm_data(data_clean, 3)
+
+
                     data_clean = data_clean.fillna(0)
                     data_clean = data_clean.resample(freq).sum()
                     if value['cleaning'] and not data_clean.empty:
