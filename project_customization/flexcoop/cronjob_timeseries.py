@@ -157,12 +157,13 @@ def aggregate_device_status(now):
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
 def clean_device_data_timeseries(today, now, last_period, freq, period, device):
-    conn = mongo_proxy.MongoProxy(MongoClient(settings.MONGO_URI))
+    conn = MongoClient(settings.MONGO_URI)
     database = conn.get_database("flexcoop")
     datap = database['data_points']
     print("starting ", device)
     point = datap.find_one({"device_id": device})
     if not point:
+        conn.close()
         return
     atw_heatpumps_df = []
     indoor_sensing_df = []
@@ -172,7 +173,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
         try:
             value = timeseries_mapping[key]
         except:
-            return
+            continue
 
         raw_model = database[key]
         data = list(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
@@ -182,7 +183,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
             data =list(raw_model.find({"device_id": device, "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
                 print("nodata2")
-                return
+                continue
             else:
                 print("data2")
                 #get the last value of the request
@@ -214,7 +215,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("AVG is only valid for numeric values")
-                    return
+                    continue
                 # data_clean = df.value.diff()
                 #data_clean = clean_threshold_data(data_clean, 0, None)
                 #data_clean = clean_znorm_data(data_clean, 3)
@@ -275,7 +276,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
 
         if data_clean.empty:
-            return
+            continue
 
         df = pd.DataFrame(data_clean)
         df = df.rename(columns={"value": value['field']})
@@ -289,7 +290,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
         elif value['class'] == atw_heatpumps:
             atw_heatpumps_df.append(df)
         else:
-            return
+            continue
     print("treated data")
         # join all df and save them to mongo.
 
