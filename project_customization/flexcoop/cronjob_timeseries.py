@@ -221,12 +221,17 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                     #data_clean = clean_znorm_data(data_clean, 3)
                     #data_clean = data_clean.resample("1s").mean().interpolate()
                     #df.value = clean_threshold_data(df.value, 0, None)
-                    data_clean = df.value.resample("1s").mean().interpolate().diff()
+                    data_clean = df.value.resample("1s").mean()
+                    mask = pd.DataFrame(data_clean.copy())
+                    data_clean = mask.copy()
+                    grp = ((mask.notnull() != mask.shift().notnull()).cumsum())
+                    grp['ones'] = 1
+                    mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
+                    data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
                     data_clean = clean_threshold_data(data_clean, 0 , None)
                     data_clean = clean_znorm_data(data_clean, 3)
 
-
-                    data_clean = data_clean.fillna(0)
+                    #data_clean = data_clean.fillna(0)
                     data_clean = data_clean.resample(freq).sum()
                     if value['cleaning'] and not data_clean.empty:
                         data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
