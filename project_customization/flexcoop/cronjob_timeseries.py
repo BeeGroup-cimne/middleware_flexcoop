@@ -379,7 +379,7 @@ def aggregate_timeseries(freq, now, period):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     if period == "backups":
-        last_period = today - timedelta(days=7)
+        last_period = today - timedelta(days=365)
     else:
         last_period = now - timedelta(hours=12)
 
@@ -391,7 +391,7 @@ def aggregate_timeseries(freq, now, period):
     for i in range(0,len(devices), NUM_PROCESSES):
         dev = devices[i:i+NUM_PROCESSES]
         a_pool = multiprocessing.Pool(NUM_PROCESSES)
-        a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),dev)
+        a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),[dev])
 
     print("********* FINISH CLEAN {} *************", datetime.now())
 
