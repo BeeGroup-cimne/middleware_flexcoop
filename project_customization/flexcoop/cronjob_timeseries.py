@@ -231,8 +231,8 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                     data_clean = clean_threshold_data(data_clean, 0 , None)
                     data_clean = clean_znorm_data(data_clean, 3)
 
-                    #data_clean = data_clean.fillna(0)
-                    data_clean = data_clean.resample(freq).sum()
+                    data_clean = data_clean.resample(freq).mean()
+                    data_clean = data_clean * 60 * 15
                     if value['cleaning'] and not data_clean.empty:
                         data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
                 else:
@@ -371,6 +371,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, devices)
                 database['meter'].delete_many(
                     {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
                 database['meter'].insert_many(documents)
+    conn.close()
 
 def aggregate_timeseries(freq, now, period):
     #search for all reporting devices
