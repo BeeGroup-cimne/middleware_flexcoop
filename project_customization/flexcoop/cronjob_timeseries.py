@@ -388,10 +388,10 @@ def aggregate_timeseries(freq, now, period):
         devices.update(raw_model.__mongo__.distinct("device_id"))
     devices = list(devices)
     #iterate for each device to obtain the clean data of each type.
-    a_pool = multiprocessing.Pool(NUM_PROCESSES)
-    devices_per_thread = DEVICES_BY_PROC;
-    a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),
-               [devices[x:x + devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
+    for i in range(0,len(devices), NUM_PROCESSES):
+        dev = devices[i:i+NUM_PROCESSES]
+        a_pool = multiprocessing.Pool(NUM_PROCESSES)
+        a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),dev)
 
     print("********* FINISH CLEAN {} *************", datetime.now())
 
