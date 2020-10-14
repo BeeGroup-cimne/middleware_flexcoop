@@ -163,7 +163,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
     print("starting ", device)
     point = datap.find_one({"device_id": device})
     if not point:
-        continue
+        return
     atw_heatpumps_df = []
     indoor_sensing_df = []
     occupancy_df = []
@@ -172,7 +172,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
         try:
             value = timeseries_mapping[key]
         except:
-            continue
+            return
 
         raw_model = database[key]
         data = list(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
@@ -182,7 +182,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
             data =list(raw_model.find({"device_id": device, "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
                 print("nodata2")
-                continue
+                return
             else:
                 print("data2")
                 #get the last value of the request
@@ -214,7 +214,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("AVG is only valid for numeric values")
-                    continue
+                    return
                 # data_clean = df.value.diff()
                 #data_clean = clean_threshold_data(data_clean, 0, None)
                 #data_clean = clean_znorm_data(data_clean, 3)
@@ -246,7 +246,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("AVG is only valid for numeric values")
-                    continue
+                    return
                 data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
                 if value['cleaning'] and not data_clean.empty:
                     data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
@@ -261,7 +261,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("MAX is only valid for numeric values")
-                    continue
+                    return
 
                 data_clean = df.resample("1s").pad().dropna().resample(freq).max()
                 if value['cleaning'] and not data_clean.empty:
@@ -275,7 +275,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
 
         if data_clean.empty:
-            continue
+            return
 
         df = pd.DataFrame(data_clean)
         df = df.rename(columns={"value": value['field']})
@@ -289,7 +289,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
         elif value['class'] == atw_heatpumps:
             atw_heatpumps_df.append(df)
         else:
-            continue
+            return
     print("treated data")
         # join all df and save them to mongo.
 
