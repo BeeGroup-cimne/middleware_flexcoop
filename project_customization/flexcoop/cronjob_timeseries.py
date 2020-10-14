@@ -379,7 +379,7 @@ def aggregate_timeseries(freq, now, period):
     today = timezone.localize(datetime(now.year,now.month,now.day)).astimezone(pytz.UTC)
     devices = set()
     if period == "backups":
-        last_period = today - timedelta(days=365)
+        last_period = today - timedelta(days=7)
     else:
         last_period = now - timedelta(hours=12)
 
@@ -468,7 +468,7 @@ def aggregate_timeseries(freq, now, period):
     """
 def clean_data(period):
     aggregate_timeseries("15Min", datetime.utcnow(), period)
-    #aggregate_device_status(datetime.utcnow())
+    aggregate_device_status(datetime.utcnow())
 
 if __name__ == "__main__":
     if sys.argv[2] == "clean":
