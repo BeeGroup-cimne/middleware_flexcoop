@@ -156,221 +156,220 @@ def aggregate_device_status(now):
     a_pool.map(partial(clean_device_data_status, today, now), [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
-def clean_device_data_timeseries(today, now, last_period, freq, period, devices):
+def clean_device_data_timeseries(today, now, last_period, freq, period, device):
     conn = mongo_proxy.MongoProxy(MongoClient(settings.MONGO_URI))
     database = conn.get_database("flexcoop")
     datap = database['data_points']
-    for device in devices:
-        print("starting ", device)
-        point = datap.find_one({"device_id": device})
-        if not point:
+    print("starting ", device)
+    point = datap.find_one({"device_id": device})
+    if not point:
+        continue
+    atw_heatpumps_df = []
+    indoor_sensing_df = []
+    occupancy_df = []
+    meter_df = []
+    for key in point['reporting_items'].keys():
+        try:
+            value = timeseries_mapping[key]
+        except:
             continue
-        atw_heatpumps_df = []
-        indoor_sensing_df = []
-        occupancy_df = []
-        meter_df = []
-        for key in point['reporting_items'].keys():
-            try:
-                value = timeseries_mapping[key]
-            except:
-                continue
 
-            raw_model = database[key]
-            data = list(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+        raw_model = database[key]
+        data = list(raw_model.find({"device_id": device, "dtstart":{"$lte":now.strftime("%Y-%m-%dT%H:%M:%S.%f"), "$gte": last_period.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
+        if not data:
+            #no data in the last period, get the last value ever.
+            print("nodata")
+            data =list(raw_model.find({"device_id": device, "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
             if not data:
-                #no data in the last period, get the last value ever.
-                print("nodata")
-                data =list(raw_model.find({"device_id": device, "dtstart": {"$lte": now.strftime("%Y-%m-%dT%H:%M:%S.%f")}}))
-                if not data:
-                    print("nodata2")
-                    continue
-                else:
-                    print("data2")
-                    #get the last value of the request
-                    df = pd.DataFrame.from_records(data)
-                    df.index = pd.to_datetime(df.dtstart, errors='coerce')
-                    df = df[~df.index.isna()]
-                    df = df.sort_index()
-                    df = df.iloc[[-1]]
-
+                print("nodata2")
+                continue
             else:
+                print("data2")
+                #get the last value of the request
                 df = pd.DataFrame.from_records(data)
                 df.index = pd.to_datetime(df.dtstart, errors='coerce')
                 df = df[~df.index.isna()]
                 df = df.sort_index()
+                df = df.iloc[[-1]]
 
-            # get the data_point information
-            point_info = point['reporting_items'][key]
-            reading_type = point_info['reading_type']
+        else:
+            df = pd.DataFrame.from_records(data)
+            df.index = pd.to_datetime(df.dtstart, errors='coerce')
+            df = df[~df.index.isna()]
+            df = df.sort_index()
 
-            account_id = df.account_id.unique()[0]
-            aggregator_id = df.aggregator_id.unique()[0]
-            device_class = point['rid']
-            df = df.loc[~df.index.duplicated(keep='last')]
-            print("readed data ", key)
+        # get the data_point information
+        point_info = point['reporting_items'][key]
+        reading_type = point_info['reading_type']
 
-            if reading_type == "Direct Read":
-                if value['operation'] == "SUM":
-                    try:
-                        df.value = pd.to_numeric(df.value)
-                    except:
-                        print("AVG is only valid for numeric values")
-                        continue
-                    # data_clean = df.value.diff()
-                    #data_clean = clean_threshold_data(data_clean, 0, None)
-                    #data_clean = clean_znorm_data(data_clean, 3)
-                    #data_clean = data_clean.resample("1s").mean().interpolate()
-                    #df.value = clean_threshold_data(df.value, 0, None)
-                    data_clean = df.value.resample("1s").mean()
-                    mask = pd.DataFrame(data_clean.copy())
-                    data_clean = mask.copy()
-                    grp = ((mask.notnull() != mask.shift().notnull()).cumsum())
-                    grp['ones'] = 1
-                    mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
-                    data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
-                    data_clean = clean_threshold_data(data_clean, 0 , None)
-                    data_clean = clean_znorm_data(data_clean, 3)
+        account_id = df.account_id.unique()[0]
+        aggregator_id = df.aggregator_id.unique()[0]
+        device_class = point['rid']
+        df = df.loc[~df.index.duplicated(keep='last')]
+        print("readed data ", key)
 
-                    data_clean = data_clean.resample(freq).mean()
-                    data_clean = data_clean * 60 * 15
-                    if value['cleaning'] and not data_clean.empty:
-                        data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
-                else:
-                    data_clean = pd.DataFrame()
+        if reading_type == "Direct Read":
+            if value['operation'] == "SUM":
+                try:
+                    df.value = pd.to_numeric(df.value)
+                except:
+                    print("AVG is only valid for numeric values")
+                    continue
+                # data_clean = df.value.diff()
+                #data_clean = clean_threshold_data(data_clean, 0, None)
+                #data_clean = clean_znorm_data(data_clean, 3)
+                #data_clean = data_clean.resample("1s").mean().interpolate()
+                #df.value = clean_threshold_data(df.value, 0, None)
+                data_clean = df.value.resample("1s").mean()
+                mask = pd.DataFrame(data_clean.copy())
+                data_clean = mask.copy()
+                grp = ((mask.notnull() != mask.shift().notnull()).cumsum())
+                grp['ones'] = 1
+                mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
+                data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
+                data_clean = clean_threshold_data(data_clean, 0 , None)
+                data_clean = clean_znorm_data(data_clean, 3)
 
-            elif reading_type == "Net":
-                # instant values, expand the value tu the current time
-                df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
-                if value['operation'] == "AVG":
-                    # average is applied to numeric values
-                    try:
-                        df.value = pd.to_numeric(df.value)
-                    except:
-                        print("AVG is only valid for numeric values")
-                        continue
-                    data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
-                    if value['cleaning'] and not data_clean.empty:
-                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
+                data_clean = data_clean.resample(freq).mean()
+                data_clean = data_clean * 60 * 15
+                if value['cleaning'] and not data_clean.empty:
+                    data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
+            else:
+                data_clean = pd.DataFrame()
 
-                elif value['operation'] == "FIRST":
-                    # first is applied to all types
-                    data_clean = df.resample("1s").pad().dropna().resample(freq).first()
+        elif reading_type == "Net":
+            # instant values, expand the value tu the current time
+            df = df[['value']].append(pd.DataFrame({"value": np.nan}, index=[now]))
+            if value['operation'] == "AVG":
+                # average is applied to numeric values
+                try:
+                    df.value = pd.to_numeric(df.value)
+                except:
+                    print("AVG is only valid for numeric values")
+                    continue
+                data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
+                if value['cleaning'] and not data_clean.empty:
+                    data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
-                elif value['operation'] == "MAX":
-                    # max is applied to numeric values
-                    try:
-                        df.value = pd.to_numeric(df.value)
-                    except:
-                        print("MAX is only valid for numeric values")
-                        continue
+            elif value['operation'] == "FIRST":
+                # first is applied to all types
+                data_clean = df.resample("1s").pad().dropna().resample(freq).first()
 
-                    data_clean = df.resample("1s").pad().dropna().resample(freq).max()
-                    if value['cleaning'] and not data_clean.empty:
-                        data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
+            elif value['operation'] == "MAX":
+                # max is applied to numeric values
+                try:
+                    df.value = pd.to_numeric(df.value)
+                except:
+                    print("MAX is only valid for numeric values")
+                    continue
 
-                else:
-                    data_clean = pd.DataFrame()
+                data_clean = df.resample("1s").pad().dropna().resample(freq).max()
+                if value['cleaning'] and not data_clean.empty:
+                    data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
 
             else:
                 data_clean = pd.DataFrame()
 
+        else:
+            data_clean = pd.DataFrame()
 
-            if data_clean.empty:
-                continue
 
-            df = pd.DataFrame(data_clean)
-            df = df.rename(columns={"value": value['field']})
+        if data_clean.empty:
+            continue
 
-            if value['class'] == indoor_sensing:
-                indoor_sensing_df.append(df)
-            elif value['class'] == occupancy:
-                occupancy_df.append(df)
-            elif value['class'] == meter:
-                meter_df.append(df)
-            elif value['class'] == atw_heatpumps:
-                atw_heatpumps_df.append(df)
-            else:
-                continue
-        print("treated data")
+        df = pd.DataFrame(data_clean)
+        df = df.rename(columns={"value": value['field']})
+
+        if value['class'] == indoor_sensing:
+            indoor_sensing_df.append(df)
+        elif value['class'] == occupancy:
+            occupancy_df.append(df)
+        elif value['class'] == meter:
+            meter_df.append(df)
+        elif value['class'] == atw_heatpumps:
+            atw_heatpumps_df.append(df)
+        else:
+            continue
+    print("treated data")
         # join all df and save them to mongo.
 
-        if indoor_sensing_df:
-            indoor_sensing_final = indoor_sensing_df.pop(0)
-            indoor_sensing_final = indoor_sensing_final.join(indoor_sensing_df)
-            indoor_sensing_final['account_id'] = account_id
-            indoor_sensing_final['aggregator_id'] = aggregator_id
-            indoor_sensing_final['device_class'] = device_class
-            indoor_sensing_final['device_id'] = device
-            indoor_sensing_final['timestamp'] = indoor_sensing_final.index.to_pydatetime()
-            indoor_sensing_final['_created_at'] = datetime.utcnow()
-            indoor_sensing_final['_updated_at'] = datetime.utcnow()
-            indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= last_period.replace(tzinfo=None)]
-            if not indoor_sensing_final.empty:
-                df_ini = min(indoor_sensing_final.index)
-                df_max = max(indoor_sensing_final.index)
-                documents = indoor_sensing_final.to_dict('records')
-                print("writting_sensing_data {}".format(len(documents)))
-                database['indoor_sensing'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['indoor_sensing'].insert_many(documents)
+    if indoor_sensing_df:
+        indoor_sensing_final = indoor_sensing_df.pop(0)
+        indoor_sensing_final = indoor_sensing_final.join(indoor_sensing_df)
+        indoor_sensing_final['account_id'] = account_id
+        indoor_sensing_final['aggregator_id'] = aggregator_id
+        indoor_sensing_final['device_class'] = device_class
+        indoor_sensing_final['device_id'] = device
+        indoor_sensing_final['timestamp'] = indoor_sensing_final.index.to_pydatetime()
+        indoor_sensing_final['_created_at'] = datetime.utcnow()
+        indoor_sensing_final['_updated_at'] = datetime.utcnow()
+        indoor_sensing_final = indoor_sensing_final[indoor_sensing_final.index >= last_period.replace(tzinfo=None)]
+        if not indoor_sensing_final.empty:
+            df_ini = min(indoor_sensing_final.index)
+            df_max = max(indoor_sensing_final.index)
+            documents = indoor_sensing_final.to_dict('records')
+            print("writting_sensing_data {}".format(len(documents)))
+            database['indoor_sensing'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            database['indoor_sensing'].insert_many(documents)
 
-        if atw_heatpumps_df:
-            atw_heatpumps_final = atw_heatpumps_df.pop(0)
-            atw_heatpumps_final = atw_heatpumps_final.join(atw_heatpumps_df)
-            atw_heatpumps_final['account_id'] = account_id
-            atw_heatpumps_final['aggregator_id'] = aggregator_id
-            atw_heatpumps_final['device_class'] = device_class
-            atw_heatpumps_final['device_id'] = device
-            atw_heatpumps_final['timestamp'] = atw_heatpumps_final.index.to_pydatetime()
-            atw_heatpumps_final['_created_at'] = datetime.utcnow()
-            atw_heatpumps_final['_updated_at'] = datetime.utcnow()
-            atw_heatpumps_final = atw_heatpumps_final[atw_heatpumps_final.index >= last_period.replace(tzinfo=None)]
-            if not atw_heatpumps_final.empty:
-                df_ini = min(atw_heatpumps_final.index)
-                df_max = max(atw_heatpumps_final.index)
-                documents = atw_heatpumps_final.to_dict('records')
-                print("writting_sensing_data {}".format(len(documents)))
-                database['atw_heatpumps'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['atw_heatpumps'].insert_many(documents)
+    if atw_heatpumps_df:
+        atw_heatpumps_final = atw_heatpumps_df.pop(0)
+        atw_heatpumps_final = atw_heatpumps_final.join(atw_heatpumps_df)
+        atw_heatpumps_final['account_id'] = account_id
+        atw_heatpumps_final['aggregator_id'] = aggregator_id
+        atw_heatpumps_final['device_class'] = device_class
+        atw_heatpumps_final['device_id'] = device
+        atw_heatpumps_final['timestamp'] = atw_heatpumps_final.index.to_pydatetime()
+        atw_heatpumps_final['_created_at'] = datetime.utcnow()
+        atw_heatpumps_final['_updated_at'] = datetime.utcnow()
+        atw_heatpumps_final = atw_heatpumps_final[atw_heatpumps_final.index >= last_period.replace(tzinfo=None)]
+        if not atw_heatpumps_final.empty:
+            df_ini = min(atw_heatpumps_final.index)
+            df_max = max(atw_heatpumps_final.index)
+            documents = atw_heatpumps_final.to_dict('records')
+            print("writting_sensing_data {}".format(len(documents)))
+            database['atw_heatpumps'].delete_many({"device_id": device, "timestamp": {"$gte":df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            database['atw_heatpumps'].insert_many(documents)
 
-        if occupancy_df:
-            occupancy_final = occupancy_df.pop(0)
-            occupancy_final = occupancy_final.join(occupancy_df)
-            occupancy_final['account_id'] = account_id
-            occupancy_final['aggregator_id'] = aggregator_id
-            occupancy_final['device_class'] = device_class
-            occupancy_final['device_id'] = device
-            occupancy_final['timestamp'] = occupancy_final.index.to_pydatetime()
-            occupancy_final['_created_at'] = datetime.utcnow()
-            occupancy_final['_updated_at'] = datetime.utcnow()
-            occupancy_final = occupancy_final[occupancy_final.index >= last_period.replace(tzinfo=None)]
-            if not occupancy_final.empty:
-                df_ini = min(occupancy_final.index)
-                df_max = max(occupancy_final.index)
-                documents = occupancy_final.to_dict('records')
-                print("writting_occupancy_data {}".format(len(documents)))
-                database['occupancy'].delete_many(
-                    {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['occupancy'].insert_many(documents)
+    if occupancy_df:
+        occupancy_final = occupancy_df.pop(0)
+        occupancy_final = occupancy_final.join(occupancy_df)
+        occupancy_final['account_id'] = account_id
+        occupancy_final['aggregator_id'] = aggregator_id
+        occupancy_final['device_class'] = device_class
+        occupancy_final['device_id'] = device
+        occupancy_final['timestamp'] = occupancy_final.index.to_pydatetime()
+        occupancy_final['_created_at'] = datetime.utcnow()
+        occupancy_final['_updated_at'] = datetime.utcnow()
+        occupancy_final = occupancy_final[occupancy_final.index >= last_period.replace(tzinfo=None)]
+        if not occupancy_final.empty:
+            df_ini = min(occupancy_final.index)
+            df_max = max(occupancy_final.index)
+            documents = occupancy_final.to_dict('records')
+            print("writting_occupancy_data {}".format(len(documents)))
+            database['occupancy'].delete_many(
+                {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            database['occupancy'].insert_many(documents)
 
-        if meter_df:
-            meter_final = meter_df.pop(0)
-            meter_final = meter_final.join(meter_df)
-            meter_final['account_id'] = account_id
-            meter_final['aggregator_id'] = aggregator_id
-            meter_final['device_class'] = device_class
-            meter_final['device_id'] = device
-            meter_final['timestamp'] = meter_final.index.to_pydatetime()
-            meter_final['_created_at'] = datetime.utcnow()
-            meter_final['_updated_at'] = datetime.utcnow()
-            meter_final = meter_final[meter_final.index >= last_period.replace(tzinfo=None)]
-            if not meter_final.empty:
-                df_ini = min(meter_final.index)
-                df_max = max(meter_final.index)
-                documents = meter_final.to_dict('records')
-                print("writting_meter_data {}".format(len(documents)))
-                database['meter'].delete_many(
-                    {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
-                database['meter'].insert_many(documents)
+    if meter_df:
+        meter_final = meter_df.pop(0)
+        meter_final = meter_final.join(meter_df)
+        meter_final['account_id'] = account_id
+        meter_final['aggregator_id'] = aggregator_id
+        meter_final['device_class'] = device_class
+        meter_final['device_id'] = device
+        meter_final['timestamp'] = meter_final.index.to_pydatetime()
+        meter_final['_created_at'] = datetime.utcnow()
+        meter_final['_updated_at'] = datetime.utcnow()
+        meter_final = meter_final[meter_final.index >= last_period.replace(tzinfo=None)]
+        if not meter_final.empty:
+            df_ini = min(meter_final.index)
+            df_max = max(meter_final.index)
+            documents = meter_final.to_dict('records')
+            print("writting_meter_data {}".format(len(documents)))
+            database['meter'].delete_many(
+                {"device_id": device, "timestamp": {"$gte": df_ini.to_pydatetime(), "$lte": df_max.to_pydatetime()}})
+            database['meter'].insert_many(documents)
     conn.close()
 
 def aggregate_timeseries(freq, now, period):
@@ -390,8 +389,7 @@ def aggregate_timeseries(freq, now, period):
     #iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool(NUM_PROCESSES)
     devices_per_thread = DEVICES_BY_PROC;
-    a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period),
-               [devices[x:x + devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
+    a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period), devices)
 
     print("********* FINISH CLEAN {} *************", datetime.now())
 
