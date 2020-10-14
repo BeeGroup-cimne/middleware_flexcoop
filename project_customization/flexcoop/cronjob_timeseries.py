@@ -229,7 +229,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                 mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
                 data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
                 data_clean = clean_threshold_data(data_clean, 0 , None)
-                data_clean = clean_znorm_data(data_clean, 3)
+                data_clean = clean_znorm_data(data_clean, 6)
 
                 data_clean = data_clean.resample(freq).mean()
                 data_clean = data_clean * 60 * 15
