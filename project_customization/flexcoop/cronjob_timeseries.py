@@ -35,7 +35,7 @@ def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
     series1 = series1 / series1.sum()
     series2 = series.copy()
     for c in series1.iteritems():
-        if c[1] > 0.50:
+        if c[1] > 0.20:
             series2 = series[series.round(2) != c[0]]
         else:
             break
@@ -235,9 +235,9 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
                 data_clean = data_clean.resample(freq).mean()
                 data_clean = data_clean * 60 * 15
-                if value['cleaning'] and not data_clean.empty:
-                    if period=="backups":
-                        data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
+                # if value['cleaning'] and not data_clean.empty:
+                #     if period=="backups":
+                #         data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
             else:
                 data_clean = pd.DataFrame()
 
