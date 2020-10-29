@@ -31,7 +31,15 @@ def no_outliers_stats(series, lowq=2.5, highq=97.5):
   return {"mean": hh.mean(), "median": hh.median(), "std": hh.std()}
 
 def clean_znorm_data(series, th, lowq=2.5, highq=97.5):
-    stats = no_outliers_stats(series, lowq, highq)
+    series1 = series.round(2).value_counts()
+    series1 = series1 / series1.sum()
+    series2 = series.copy()
+    for c in series1.iteritems():
+        if c[1] > 0.50:
+            series2 = series[series.round(2) != c[0]]
+        else:
+            break
+    stats = no_outliers_stats(series2, lowq, highq)
     zscore = np.abs( (series - stats['median']) / stats['std'])
     return series[zscore < th]
 
@@ -64,19 +72,14 @@ def clean_threshold_data(series, min_th=None, max_th=None):
 
 def cleaning_data(series, period, operations):
     df = pd.DataFrame(series)
-    stats = no_outliers_stats(df.value)
-    max_th = abs(stats['median']*2 + (100 * stats['std']))
-    df.value = clean_threshold_data(df.value, min_th=None, max_th=max_th)
     for operation in operations:
         if operation['type'] == 'threshold':
             df.value = clean_threshold_data(df.value, min_th=operation['params'][0], max_th=operation['params'][1])
         if operation['type'] == "znorm":
-            series_1 = df.value[df.value > np.percentile(df.value, 10)]
-            series_1 = clean_znorm_data(series_1, operation['params'])
-            if period == "backups":
-                #print(len(series))
-                series_1 = clean_znorm_window(series_1, operation['params'])
-            df.value.update(series_1)
+            df.value = clean_znorm_data(df.value, operation['params'])
+            # if period == "backups":
+            #     #print(len(series))
+            #     df.value = clean_znorm_window(df.value, operation['params'])
     return df.value
 
 
@@ -228,13 +231,13 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                 grp['ones'] = 1
                 mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
                 data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
-                data_clean = clean_threshold_data(data_clean, 0 , None)
-                data_clean = clean_znorm_data(data_clean, 6)
+                data_clean = clean_threshold_data(data_clean, 0 , 0.004166)
 
                 data_clean = data_clean.resample(freq).mean()
                 data_clean = data_clean * 60 * 15
                 if value['cleaning'] and not data_clean.empty:
-                    data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
+                    if period=="backups":
+                        data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
             else:
                 data_clean = pd.DataFrame()
 
