@@ -482,10 +482,10 @@ def aggregate_timeseries_user(freq, now, user):
 #                 raw_model.__mongo__.delete_many({"device_id": device, "dtstart": {"$lt": delete_date}})
 
 # Call this function every 15 min
-    """
-    aggregate_timeseries("15Min", datetime.utcnow(), "backups")
-    aggregate_timeseries("15Min", datetime.utcnow(), "hourly")
-    """
+"""
+aggregate_timeseries("15Min", datetime.utcnow(), "backups")
+aggregate_timeseries("15Min", datetime.utcnow(), "hourly")
+"""
 def clean_data(period):
     aggregate_timeseries("15Min", datetime.utcnow(), period)
     aggregate_device_status(datetime.utcnow())
