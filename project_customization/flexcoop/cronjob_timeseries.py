@@ -406,10 +406,10 @@ def aggregate_timeseries_user(freq, now, user):
         devices = set()
         last_period = today - timedelta(days=360)
         raw_model = get_data_model('data_points')
-        devices = raw_model.__mongo__.distinct("device_id", {"account_id":"0a038d21-78b3-50be-944b-d03e78f6ecc5"})
+        devices = raw_model.__mongo__.distinct("device_id", {"account_id":user})
         # iterate for each device to obtain the clean data of each type.
         a_pool = multiprocessing.Pool(NUM_PROCESSES)
-        devices_per_thread = DEVICES_BY_PROC;
+        devices_per_thread = DEVICES_BY_PROC
         a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, "backups"), devices)
 
         print("********* FINISH CLEAN {} *************", datetime.now())
@@ -516,6 +516,8 @@ if __name__ == "__main__":
         with open('{}/{}'.format(working_directory, pidfile), "w") as pid:
             pid.write(str(os.getpid()))
         clean_data(sys.argv[3])
+    elif sys.argv[2] == "user":
+        aggregate_timeseries("15Min", datetime.utcnow(), sys.argv[3])
     elif sys.argv[2] == "delete":
         pass
         #delete_raw_data()
