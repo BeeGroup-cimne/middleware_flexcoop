@@ -235,6 +235,8 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
                 data_clean = data_clean.resample(freq).mean()
                 data_clean = data_clean * 60 * 15
+                if device_class == "dhwDevice":
+                    data_clean = data_clean.fillna(0)
                 # if value['cleaning'] and not data_clean.empty:
                 #     if period=="backups":
                 #         data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
