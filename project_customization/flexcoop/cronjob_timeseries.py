@@ -159,6 +159,23 @@ def aggregate_device_status(now):
     a_pool.map(partial(clean_device_data_status, today, now), [devices[x:x+devices_per_thread] for x in range(0, len(devices), devices_per_thread)])
     print("********* END STATUS CLEAN {} *************", datetime.now())
 
+"""
+data_clean = pd.DataFrame(df.value.resample("1s").mean())  
+mask = pd.DataFrame(data_clean.copy())
+data_clean = mask.copy()
+grp = ((mask.notnull() != mask.shift().notnull()).cumsum())
+grp['ones'] = 1
+mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
+data_clean.value = data_clean.value.interpolate(limit_direction="backward")[mask.value].diff()
+data_clean.value = clean_threshold_data(data_clean.value, 0 , 0.004166)
+data_clean_value = data_clean.value.resample(freq).mean()
+data_clean_value = data_clean_value * 60 * 15   
+data_clean = pd.DataFrame(data_clean_value) 
+plt.plot(data_clean.value)   
+plt.show()
+
+"""
+
 def clean_device_data_timeseries(today, now, last_period, freq, period, device):
     conn = MongoClient(settings.MONGO_URI)
     database = conn.get_database("flexcoop")
@@ -219,27 +236,35 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                 except:
                     print("AVG is only valid for numeric values")
                     continue
-                # data_clean = df.value.diff()
-                #data_clean = clean_threshold_data(data_clean, 0, None)
-                #data_clean = clean_znorm_data(data_clean, 3)
-                #data_clean = data_clean.resample("1s").mean().interpolate()
-                #df.value = clean_threshold_data(df.value, 0, None)
-                data_clean = df.value.resample("1s").mean()
-                mask = pd.DataFrame(data_clean.copy())
-                data_clean = mask.copy()
-                grp = ((mask.notnull() != mask.shift().notnull()).cumsum())
-                grp['ones'] = 1
-                mask['value'] = (grp.groupby('value')['ones'].transform('count') < 3600) | data_clean['value'].notnull()
-                data_clean = data_clean.interpolate(limit_direction="backward")[mask].diff()
-                data_clean = clean_threshold_data(data_clean, 0 , 0.004166)
+                data_check = df.value.diff()
 
-                data_clean = data_clean.resample(freq).mean()
-                data_clean = data_clean * 60 * 15
-                if device_class == "dhwDevice":
-                    data_clean = data_clean.fillna(0)
-                # if value['cleaning'] and not data_clean.empty:
-                #     if period=="backups":
-                #         data_clean.value = cleaning_data(data_clean, period, value['cleaning'])
+                data_clean = df.value[data_check.shift(-1) >=0]
+
+                data_clean = pd.DataFrame(data_clean.resample("1s").mean())
+                data_clean['verified'] = data_clean.value.notna()
+                data_clean.verified = data_clean.verified[data_clean.value.notna()]
+
+                copy = pd.DataFrame(data_clean.value.resample("3H", label='right').max())
+                copy['verified'] = False
+                copy.value = copy.value.fillna(method='ffill')
+
+                data_clean = pd.concat([data_clean, copy], sort=True)
+                data_clean = data_clean[~data_clean.index.duplicated(keep='last')]
+                data_clean = data_clean.sort_index()
+
+                data_clean.value = data_clean.value.interpolate(limit_direction="backward").diff()
+                data_clean['verified_0'] = data_clean.verified.fillna(method='ffill')
+                data_clean['verified_1'] = data_clean.verified.fillna(method='bfill')
+                data_clean['verified'] = data_clean.verified_0 & data_clean.verified_1
+
+                data_clean.value = clean_threshold_data(data_clean.value, 0 , 0.004166)
+
+                data_clean_value = data_clean.value.resample(freq).mean()
+                data_clean_value = data_clean_value * 60 * 15
+                data_clean_verified = data_clean.verified.resample(freq).apply(all)
+                data_clean = pd.DataFrame(data_clean_value)
+                data_clean['verified_kwh'] = data_clean_verified
+
             else:
                 data_clean = pd.DataFrame()
 
