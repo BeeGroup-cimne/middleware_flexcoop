@@ -239,6 +239,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                 data_check = df.value.diff()
 
                 data_clean = df.value[data_check.shift(-1) >=0]
+                data_clean = data_clean[data_check >= 0]
 
                 data_clean = pd.DataFrame(data_clean.resample("1s").mean())
                 data_clean['verified'] = data_clean.value.notna()
@@ -277,7 +278,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("AVG is only valid for numeric values")
-                    return
+                    #return
                 data_clean = df.resample("1s").pad().dropna().resample(freq).mean()
                 if value['cleaning'] and not data_clean.empty:
                     data_clean.value = cleaning_data(data_clean.value, period, value['cleaning'])
@@ -292,7 +293,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
                     df.value = pd.to_numeric(df.value)
                 except:
                     print("MAX is only valid for numeric values")
-                    return
+                    #return
 
                 data_clean = df.resample("1s").pad().dropna().resample(freq).max()
                 if value['cleaning'] and not data_clean.empty:
