@@ -429,16 +429,26 @@ def aggregate_timeseries_user(freq, now, user):
         # search for all reporting devices
         print("********* START CLEAN {} *************", datetime.now())
         today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
-        devices = set()
         last_period = today - timedelta(days=360)
         raw_model = get_data_model('data_points')
         devices = raw_model.__mongo__.distinct("device_id", {"account_id":user})
+        devices = list(devices)
         # iterate for each device to obtain the clean data of each type.
         a_pool = multiprocessing.Pool(NUM_PROCESSES)
         devices_per_thread = DEVICES_BY_PROC
         a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, "backups"), devices)
 
         print("********* FINISH CLEAN {} *************", datetime.now())
+
+
+def aggregate_timeseries_device(freq, now, device):
+    # search for all reporting devices
+    print("********* START CLEAN {} *************", datetime.now())
+    today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
+    last_period = today - timedelta(days=360)
+    clean_device_data_timeseries(today, now, last_period, freq, "backups", device)
+    print("********* FINISH CLEAN {} *************", datetime.now())
+
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
 # def delete_raw_data():
@@ -544,6 +554,8 @@ if __name__ == "__main__":
         clean_data(sys.argv[3])
     elif sys.argv[2] == "user":
         aggregate_timeseries_user("15Min", datetime.utcnow(), sys.argv[3])
+    elif sys.argv[2] == "device":
+        aggregate_timeseries_device("15Min", datetime.utcnow(), sys.argv[3])
     elif sys.argv[2] == "delete":
         pass
         #delete_raw_data()
