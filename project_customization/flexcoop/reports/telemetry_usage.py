@@ -291,13 +291,13 @@ class TelemetryUsageReport(OadrReport):
             df.device_id = df.device_id.apply(get_anonimized_id)
 
             df = df.dropna(subset=['device_id'])
+            device_id_df = df.device_id.unique()[0]
+            data_point = conn['data_points'].find({"device_id": device_id_df})
 
-            # data_point = conn['data_points'].find({"device_id": df.device_id[0]})
-            #
-            # if not data_point:
-            #     continue
-            # if not data_point['reporting_items'][metric]['subscribed']:
-            #     continue
+            if not data_point:
+                continue
+            if not data_point['reporting_items'][metric]['subscribed']:
+                continue
             #save all historics
             TMP = get_data_model(metric)
             upload_data = df.to_dict(orient="records")
