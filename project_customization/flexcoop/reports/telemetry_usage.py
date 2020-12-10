@@ -271,12 +271,12 @@ class TelemetryUsageReport(OadrReport):
         send_thread.start()
 
         for metric, data in mongo_data.items():
-            data_point = conn['data_points'].find({"device_id": get_id_from_rid(rid_i)})
-
-            if not data_point:
-                continue
-            if not data_point['reporting_items'][metric]['subscribed']:
-                continue
+            # data_point = conn['data_points'].find({"device_id": get_id_from_rid(rid_i)})
+            #
+            # if not data_point:
+            #     continue
+            # if not data_point['reporting_items'][metric]['subscribed']:
+            #     continue
             df = pd.DataFrame.from_records(data)
             id_mappings = {}
             rids = df.device_id.unique()
