@@ -193,6 +193,7 @@ class TelemetryUsageReport(OadrReport):
 
     def parse(self, oadrReport):
         conn = MongoClient(settings.MONGO_URI)
+        database = conn.get_database("flexcoop")
         report = get_report_models()
         dtstart = oadrReport.find(".//xcal:dtstart", namespaces=NAMESPACES)
         duration = oadrReport.find(".//xcal:duration", namespaces=NAMESPACES)
@@ -292,7 +293,7 @@ class TelemetryUsageReport(OadrReport):
 
             df = df.dropna(subset=['device_id'])
             device_id_df = df.device_id.unique()[0]
-            data_point = conn['data_points'].find({"device_id": device_id_df})
+            data_point = database['data_points'].find({"device_id": device_id_df})[0]
 
             if not data_point:
                 continue
