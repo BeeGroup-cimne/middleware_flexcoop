@@ -407,18 +407,28 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
             database['meter'].insert_many(documents)
     conn.close()
 
-def aggregate_exceptions():
-    pass
-    # conn = MongoClient(settings.MONGO_URI)
-    # database = conn.get_database("flexcoop")
-    # df1 = pd.DataFrame.from_records(database['meter'].find({"device_id":"404de147-6428-4454-8aae-19ac7f8e1bc0"}))
-    # df1 = df1.set_index("timestamp")
-    # df2 = pd.DataFrame.from_records(database['meter'].find({"device_id":"76f73c6a-323b-11ea-92d1-ac1f6b403fbc"}))
-    # df2 = df2.set_index("timestamp")
-    #
-    # df3 = pd.DataFrame(df1.kwh + df2.kwh)
-    # df3['verified_kwh'] = df1.verified_kwh & df2.verified_kwh
-    # database['meter'].remove({"device_id":"76f899f2-323b-11ea-92d1-ac1f6b403fbc"})
+def aggregate_exceptions(now, last_period):
+    conn = MongoClient(settings.MONGO_URI)
+    database = conn.get_database("flexcoop")
+
+    df1 = pd.DataFrame.from_records(database['meter'].find({"device_id":"404de147-6428-4454-8aae-19ac7f8e1bc0", "timestamp": {"$lte": now, "$gte": last_period}}))
+    df1 = df1.set_index("timestamp")
+    df2 = pd.DataFrame.from_records(database['meter'].find({"device_id":"76f73c6a-323b-11ea-92d1-ac1f6b403fbc", "timestamp": {"$lte": now, "$gte": last_period}}))
+    df2 = df2.set_index("timestamp")
+
+    df3 = pd.DataFrame(df1.kwh + df2.kwh)
+    df3['verified_kwh'] = df1.verified_kwh & df2.verified_kwh
+    df3['watts'] = df1.watts + df2.watts
+    df3['account_id'] = "764e95f2-2489-54f2-930e-1e336168c6dc"
+    df3['aggregator_id'] = "flexcoop.somenergia.coop"
+    df3['device_class'] = "prosumerDeviceMetering"
+    df3['device_id'] = "76f899f2-323b-11ea-92d1-ac1f6b403fbc"
+    df3['timestamp'] = df3.index.to_pydatetime()
+    df3['_created_at'] = datetime.utcnow()
+    df3['_updated_at'] = datetime.utcnow()
+    database['meter'].delete_many({"device_id":"76f899f2-323b-11ea-92d1-ac1f6b403fbc", "timestamp": {"$lte": now, "$gte": last_period}})
+    database['meter'].insert_many(df3.to_dict('records'))
+    conn.close()
     # #aqui
 
 
@@ -441,7 +451,7 @@ def aggregate_timeseries(freq, now, period):
     a_pool = multiprocessing.Pool(NUM_PROCESSES)
     devices_per_thread = DEVICES_BY_PROC;
     a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period), devices)
-    aggregate_exceptions()
+    aggregate_exceptions(now, last_period)
 
     print("********* FINISH CLEAN {} *************", datetime.now())
 
@@ -464,14 +474,14 @@ def aggregate_timeseries_user(freq, now, user):
 
 def aggregate_timeseries_device(freq, now, device):
     # search for all reporting devices
+    today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
+    last_period = today - timedelta(days=360)
     if device not in device_exception:
         print("********* START CLEAN {} *************", datetime.now())
-        today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
-        last_period = today - timedelta(days=360)
         clean_device_data_timeseries(today, now, last_period, freq, "backups", device)
         print("********* FINISH CLEAN {} *************", datetime.now())
     else:
-        aggregate_exceptions()
+        aggregate_exceptions(now, last_period)
 
 
 
