@@ -26,6 +26,7 @@ timezone = pytz.timezone("Europe/Madrid")
 NUM_PROCESSES = 10
 DEVICES_BY_PROC = 10
 
+device_exception = ["76f899f2-323b-11ea-92d1-ac1f6b403fbc"]
 def no_outliers_stats(series, lowq=2.5, highq=97.5):
   hh = series[(series <= np.nanquantile(series, highq/100))& (series >= np.nanquantile(series, lowq/100))]
   return {"mean": hh.mean(), "median": hh.median(), "std": hh.std()}
@@ -404,6 +405,21 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
             database['meter'].insert_many(documents)
     conn.close()
 
+def aggregate_exceptions():
+    pass
+    # conn = MongoClient(settings.MONGO_URI)
+    # database = conn.get_database("flexcoop")
+    # df1 = pd.DataFrame.from_records(database['meter'].find({"device_id":"404de147-6428-4454-8aae-19ac7f8e1bc0"}))
+    # df1 = df1.set_index("timestamp")
+    # df2 = pd.DataFrame.from_records(database['meter'].find({"device_id":"76f73c6a-323b-11ea-92d1-ac1f6b403fbc"}))
+    # df2 = df2.set_index("timestamp")
+    #
+    # df3 = pd.DataFrame(df1.kwh + df2.kwh)
+    # df3['verified_kwh'] = df1.verified_kwh & df2.verified_kwh
+    # database['meter'].remove({"device_id":"76f899f2-323b-11ea-92d1-ac1f6b403fbc"})
+    # #aqui
+
+
 def aggregate_timeseries(freq, now, period):
     #search for all reporting devices
     print("********* START CLEAN {} *************", datetime.now())
@@ -418,10 +434,12 @@ def aggregate_timeseries(freq, now, period):
         raw_model = get_data_model(key)
         devices.update(raw_model.__mongo__.distinct("device_id"))
     devices = list(devices)
+    devices = [x for x in devices if x not in device_exception]
     #iterate for each device to obtain the clean data of each type.
     a_pool = multiprocessing.Pool(NUM_PROCESSES)
     devices_per_thread = DEVICES_BY_PROC;
     a_pool.map(partial(clean_device_data_timeseries, today, now, last_period, freq, period), devices)
+    aggregate_exceptions()
 
     print("********* FINISH CLEAN {} *************", datetime.now())
 
@@ -433,6 +451,7 @@ def aggregate_timeseries_user(freq, now, user):
         raw_model = get_data_model('data_points')
         devices = raw_model.__mongo__.distinct("device_id", {"account_id":user})
         devices = list(devices)
+        devices = [x for x in devices if x not in device_exception]
         # iterate for each device to obtain the clean data of each type.
         a_pool = multiprocessing.Pool(NUM_PROCESSES)
         devices_per_thread = DEVICES_BY_PROC
@@ -443,11 +462,15 @@ def aggregate_timeseries_user(freq, now, user):
 
 def aggregate_timeseries_device(freq, now, device):
     # search for all reporting devices
-    print("********* START CLEAN {} *************", datetime.now())
-    today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
-    last_period = today - timedelta(days=360)
-    clean_device_data_timeseries(today, now, last_period, freq, "backups", device)
-    print("********* FINISH CLEAN {} *************", datetime.now())
+    if device not in device_exception:
+        print("********* START CLEAN {} *************", datetime.now())
+        today = timezone.localize(datetime(now.year, now.month, now.day)).astimezone(pytz.UTC)
+        last_period = today - timedelta(days=360)
+        clean_device_data_timeseries(today, now, last_period, freq, "backups", device)
+        print("********* FINISH CLEAN {} *************", datetime.now())
+    else:
+        aggregate_exceptions()
+
 
 
 # Call this function everyday at 00:00, 08:00 and at 16:00
