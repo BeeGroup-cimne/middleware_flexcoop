@@ -177,6 +177,7 @@ plt.show()
 
 """
 
+
 def clean_device_data_timeseries(today, now, last_period, freq, period, device):
     conn = MongoClient(settings.MONGO_URI)
     database = conn.get_database("flexcoop")
@@ -328,7 +329,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
     if indoor_sensing_df:
         indoor_sensing_final = indoor_sensing_df.pop(0)
-        indoor_sensing_final = indoor_sensing_final.join(indoor_sensing_df)
+        indoor_sensing_final = indoor_sensing_final.join(indoor_sensing_df, how="outer")
         indoor_sensing_final['account_id'] = account_id
         indoor_sensing_final['aggregator_id'] = aggregator_id
         indoor_sensing_final['device_class'] = device_class
@@ -347,7 +348,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
     if atw_heatpumps_df:
         atw_heatpumps_final = atw_heatpumps_df.pop(0)
-        atw_heatpumps_final = atw_heatpumps_final.join(atw_heatpumps_df)
+        atw_heatpumps_final = atw_heatpumps_final.join(atw_heatpumps_df, how="outer")
         atw_heatpumps_final['account_id'] = account_id
         atw_heatpumps_final['aggregator_id'] = aggregator_id
         atw_heatpumps_final['device_class'] = device_class
@@ -366,7 +367,7 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
     if occupancy_df:
         occupancy_final = occupancy_df.pop(0)
-        occupancy_final = occupancy_final.join(occupancy_df)
+        occupancy_final = occupancy_final.join(occupancy_df, how="outer")
         occupancy_final['account_id'] = account_id
         occupancy_final['aggregator_id'] = aggregator_id
         occupancy_final['device_class'] = device_class
@@ -386,7 +387,8 @@ def clean_device_data_timeseries(today, now, last_period, freq, period, device):
 
     if meter_df:
         meter_final = meter_df.pop(0)
-        meter_final = meter_final.join(meter_df)
+        meter_final = meter_final.join(meter_df, how="outer")
+        print("meter {}".format(str(len(meter_final))))
         meter_final['account_id'] = account_id
         meter_final['aggregator_id'] = aggregator_id
         meter_final['device_class'] = device_class
