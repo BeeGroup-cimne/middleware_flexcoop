@@ -3,7 +3,9 @@ import re
 from datetime import datetime
 
 import requests
+from pymongo import MongoClient
 
+import settings
 from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
@@ -190,6 +192,7 @@ class TelemetryUsageReport(OadrReport):
 
 
     def parse(self, oadrReport):
+        conn = MongoClient(settings.MONGO_URI)
         report = get_report_models()
         dtstart = oadrReport.find(".//xcal:dtstart", namespaces=NAMESPACES)
         duration = oadrReport.find(".//xcal:duration", namespaces=NAMESPACES)
@@ -242,7 +245,6 @@ class TelemetryUsageReport(OadrReport):
             metric = convert_snake_case(metric)
             if metric not in timeseries_mapping.keys():
                 continue
-
             json = {
                 "report_id": report_id,  #
                 "dtstart": dtstart_i,  #
@@ -269,6 +271,12 @@ class TelemetryUsageReport(OadrReport):
         send_thread.start()
 
         for metric, data in mongo_data.items():
+            data_point = conn['data_points'].find({"device_id": get_id_from_rid(rid_i)})
+
+            if not data_point:
+                continue
+            if not data_point['reporting_items'][metric]['subscribed']:
+                continue
             df = pd.DataFrame.from_records(data)
             id_mappings = {}
             rids = df.device_id.unique()
