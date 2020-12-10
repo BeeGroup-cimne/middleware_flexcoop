@@ -3,9 +3,7 @@ import re
 from datetime import datetime
 
 import requests
-from pymongo import MongoClient
 
-import settings
 from mongo_orm import MongoDB, AnyField
 from oadr_core.exceptions import InvalidReportException
 from oadr_core.oadr_payloads.oadr_payloads_general import ELEMENTS, NAMESPACES
@@ -192,8 +190,6 @@ class TelemetryUsageReport(OadrReport):
 
 
     def parse(self, oadrReport):
-        conn = MongoClient(settings.MONGO_URI)
-        database = conn.get_database("flexcoop")
         report = get_report_models()
         dtstart = oadrReport.find(".//xcal:dtstart", namespaces=NAMESPACES)
         duration = oadrReport.find(".//xcal:duration", namespaces=NAMESPACES)
@@ -246,6 +242,7 @@ class TelemetryUsageReport(OadrReport):
             metric = convert_snake_case(metric)
             if metric not in timeseries_mapping.keys():
                 continue
+
             json = {
                 "report_id": report_id,  #
                 "dtstart": dtstart_i,  #
@@ -292,14 +289,8 @@ class TelemetryUsageReport(OadrReport):
             df.device_id = df.device_id.apply(get_anonimized_id)
 
             df = df.dropna(subset=['device_id'])
-            device_id_df = df.device_id.unique()[0]
-            data_point = database['data_points'].find({"device_id": device_id_df})[0]
 
-            if not data_point:
-                continue
-            if not data_point['reporting_items'][metric]['subscribed']:
-                continue
-            #save all historics
+            # save all historics
             TMP = get_data_model(metric)
             upload_data = df.to_dict(orient="records")
             TMP.__mongo__.insert_many(upload_data)
