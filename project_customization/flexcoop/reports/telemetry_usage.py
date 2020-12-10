@@ -271,12 +271,6 @@ class TelemetryUsageReport(OadrReport):
         send_thread.start()
 
         for metric, data in mongo_data.items():
-            # data_point = conn['data_points'].find({"device_id": get_id_from_rid(rid_i)})
-            #
-            # if not data_point:
-            #     continue
-            # if not data_point['reporting_items'][metric]['subscribed']:
-            #     continue
             df = pd.DataFrame.from_records(data)
             id_mappings = {}
             rids = df.device_id.unique()
@@ -298,7 +292,13 @@ class TelemetryUsageReport(OadrReport):
 
             df = df.dropna(subset=['device_id'])
 
-            # save all historics
+            data_point = conn['data_points'].find({"device_id": df.device_id[0]})
+
+            if not data_point:
+                continue
+            if not data_point['reporting_items'][metric]['subscribed']:
+                continue
+            #save all historics
             TMP = get_data_model(metric)
             upload_data = df.to_dict(orient="records")
             TMP.__mongo__.insert_many(upload_data)
