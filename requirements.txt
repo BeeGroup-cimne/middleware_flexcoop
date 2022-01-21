@@ -14,7 +14,7 @@ Flask==1.0.2
 Flask-Bootstrap==3.3.7.1
 Flask-PyMongo==2.2.0
 idna==2.8
-ipython==7.0.1
+ipython==7.16.3
 ipython-genutils==0.2.0
 itsdangerous==0.24
 jedi==0.13.1
